@@ -21,9 +21,8 @@
         android:layout_height="wrap_content"
         android:layout_marginBottom="16dp"/>
 
-    <Button
-        android:id="@+id/selectAppButton"
-        android:text="Seleziona App"
+    <Spinner
+        android:id="@+id/appSpinner"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginBottom="16dp"/>
@@ -35,6 +34,13 @@
         android:textColor="#FFFFFF"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"/>
+    
+    <Button
+        android:id="@+id/resetButton"
+        android:text="Reset"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"/>
     
     <FrameLayout
         android:id="@+id/circleContainer"
@@ -63,23 +69,5 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"/>
     </FrameLayout>
-
-    <ProgressBar
-        android:id="@+id/progressBar"
-        style="?android:attr/progressBarStyleHorizontal"
-        android:layout_width="match_parent"
-        android:layout_height="8dp"
-        android:max="100"
-        android:progress="0"
-        android:layout_marginTop="24dp"/>
-
-   <TextView
-        android:id="@+id/countdownText"
-        android:text="Attesa..."
-        android:textColor="#FFFFFF"
-        android:textSize="18sp"
-        android:layout_marginTop="16dp"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"/>
 
 </LinearLayout>
