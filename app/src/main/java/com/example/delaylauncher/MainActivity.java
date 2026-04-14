@@ -26,14 +26,14 @@ public class MainActivity extends AppCompatActivity {
         SharedPreferences prefs = getSharedPreferences(PREFS, MODE_PRIVATE);
 
         if (prefs.getBoolean("configured", false)) {
-            startDelayedLaunch(prefs.getInt("delay", 10), String pkg = prefs.getString("package", null);
-               if (pkg != null) {
-                  startDelayedLaunch(prefs.getInt("delay", 10), pkg);
-            });
+            String pkg = prefs.getString("package", null);
+            if (pkg != null) {
+                startDelayedLaunch(prefs.getInt("delay", 10), pkg);
+            }
             finish();
             return;
         }
-
+  
         setContentView(R.layout.activity_main);
         
         delaySpinner = findViewById(R.id.delaySpinner);
