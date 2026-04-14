@@ -28,7 +28,7 @@ public class MainActivity extends AppCompatActivity {
             return;
         }
 
-        setContentView(createLayout());
+        setContentView(R.layout.activity_main);
         loadLaunchableApps();
         setupSpinners();
 
