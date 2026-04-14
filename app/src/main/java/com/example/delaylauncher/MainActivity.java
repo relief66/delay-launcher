@@ -46,6 +46,12 @@ public class MainActivity extends AppCompatActivity {
 
         ProgressBar progressBar = findViewById(R.id.progressBar);
         TextView countdownText = findViewById(R.id.countdownText);
+
+        FrameLayout circleContainer = findViewById(R.id.circleContainer);
+        ProgressBar circleProgress = findViewById(R.id.circleProgress);
+        TextView circleText = findViewById(R.id.circleText);
+
+        circleContainer.setVisibility(View.GONE);
         
         progressBar.setVisibility(View.GONE);
         countdownText.setVisibility(View.GONE);
@@ -64,32 +70,33 @@ public class MainActivity extends AppCompatActivity {
                .putString("package", packageName)
                .apply();
 
-          if (delay > 10) {
+         if (delay > 10) {
 
-            progressBar.setVisibility(View.VISIBLE);
-            countdownText.setVisibility(View.VISIBLE);
+             circleContainer.setVisibility(View.VISIBLE);
 
-            new CountDownTimer(delay * 1000, 100) {
+             new CountDownTimer(delay * 1000, 50) {
 
-               public void onTick(long millisUntilFinished) {
-                  int progress = (int) ((delay * 1000 - millisUntilFinished) * 100 / (delay * 1000));
-                  progressBar.setProgress(progress);
+                 public void onTick(long millisUntilFinished) {
 
-                  countdownText.setText("Avvio tra " + (millisUntilFinished / 1000) + "s");
-               }
+                     int progress = (int) ((delay * 1000 - millisUntilFinished) * 100 / (delay * 1000));
+                     circleProgress.setProgress(progress);
 
-               public void onFinish() {
-                  progressBar.setProgress(100);
-                  countdownText.setText("Avvio!");
+                     int secondsLeft = (int) (millisUntilFinished / 1000);
+                     circleText.setText(String.valueOf(secondsLeft));
+                }
 
-                  startDelayedLaunch(0, packageName);
-               }
+                public void onFinish() {
+                     circleProgress.setProgress(100);
+                     circleText.setText("GO");
 
-            }.start();
+                     startDelayedLaunch(0, packageName);
+                }
 
-          } else {
-               startDelayedLaunch(delay, packageName);
-            }
+             }.start();
+
+         } else {
+             startDelayedLaunch(delay, packageName);
+         }
 
         });
 
