@@ -8,6 +8,9 @@ import android.view.*;
 import android.widget.*;
 import androidx.appcompat.app.AppCompatActivity;
 import java.util.*;
+import android.os.CountDownTimer;
+import android.widget.ProgressBar;
+import android.widget.TextView;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -23,26 +26,71 @@ public class MainActivity extends AppCompatActivity {
         SharedPreferences prefs = getSharedPreferences(PREFS, MODE_PRIVATE);
 
         if (prefs.getBoolean("configured", false)) {
-            startDelayedLaunch(prefs.getInt("delay", 10), prefs.getString("package", null));
+            startDelayedLaunch(prefs.getInt("delay", 10), String pkg = prefs.getString("package", null);
+               if (pkg != null) {
+                  startDelayedLaunch(prefs.getInt("delay", 10), pkg);
+            });
             finish();
             return;
         }
 
         setContentView(R.layout.activity_main);
+        
+        delaySpinner = findViewById(R.id.delaySpinner);
+        appSpinner = findViewById(R.id.appSpinner);
+        startButton = findViewById(R.id.startButton);
+        resetButton = findViewById(R.id.resetButton);
+
+        progressBar.setVisibility(View.GONE);
+        countdownText.setVisibility(View.GONE);
+
+        ProgressBar progressBar = findViewById(R.id.progressBar);
+        TextView countdownText = findViewById(R.id.countdownText);
+        
+        progressBar.setVisibility(View.GONE);
+        countdownText.setVisibility(View.GONE);
+
         loadLaunchableApps();
         setupSpinners();
 
         startButton.setOnClickListener(v -> {
-            int delay = Integer.parseInt(delaySpinner.getSelectedItem().toString());
-            String packageName = launchableApps.get(appSpinner.getSelectedItemPosition()).activityInfo.packageName;
 
-            prefs.edit()
-                    .putBoolean("configured", true)
-                    .putInt("delay", delay)
-                    .putString("package", packageName)
-                    .apply();
+          int delay = Integer.parseInt(delaySpinner.getSelectedItem().toString());
+          String packageName = launchableApps.get(appSpinner.getSelectedItemPosition()).activityInfo.packageName;
 
-            startDelayedLaunch(delay, packageName);
+             prefs.edit()
+               .putBoolean("configured", true)
+               .putInt("delay", delay)
+               .putString("package", packageName)
+               .apply();
+
+          if (delay > 10) {
+
+            progressBar.setVisibility(View.VISIBLE);
+            countdownText.setVisibility(View.VISIBLE);
+
+            new CountDownTimer(delay * 1000, 100) {
+
+               public void onTick(long millisUntilFinished) {
+                  int progress = (int) ((delay * 1000 - millisUntilFinished) * 100 / (delay * 1000));
+                  progressBar.setProgress(progress);
+
+                  countdownText.setText("Avvio tra " + (millisUntilFinished / 1000) + "s");
+               }
+
+               public void onFinish() {
+                  progressBar.setProgress(100);
+                  countdownText.setText("Avvio!");
+
+                  startDelayedLaunch(0, packageName);
+               }
+
+            }.start();
+
+          } else {
+               startDelayedLaunch(delay, packageName);
+            }
+
         });
 
         resetButton.setOnClickListener(v -> {
@@ -52,7 +100,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void startDelayedLaunch(int delaySeconds, String packageName) {
-        new Handler().postDelayed(() -> {
+        new Handler(Looper.getMainLooper()).postDelayed(() -> {
             Intent intent = getPackageManager().getLaunchIntentForPackage(packageName);
             if (intent != null) startActivity(intent);
         }, delaySeconds * 1000L);
@@ -73,32 +121,5 @@ public class MainActivity extends AppCompatActivity {
             names.add(app.loadLabel(getPackageManager()).toString());
         }
         appSpinner.setAdapter(new ArrayAdapter<>(this, android.R.layout.simple_spinner_dropdown_item, names));
-    }
-
-    private View createLayout() {
-        LinearLayout layout = new LinearLayout(this);
-        layout.setOrientation(LinearLayout.VERTICAL);
-        layout.setPadding(60,60,60,60);
-
-        TextView title = new TextView(this);
-        title.setText("Delay Launcher");
-        title.setTextSize(22);
-
-        delaySpinner = new Spinner(this);
-        appSpinner = new Spinner(this);
-
-        startButton = new Button(this);
-        startButton.setText("Avvia");
-
-        resetButton = new Button(this);
-        resetButton.setText("Reset");
-
-        layout.addView(title);
-        layout.addView(delaySpinner);
-        layout.addView(appSpinner);
-        layout.addView(startButton);
-        layout.addView(resetButton);
-
-        return layout;
     }
 }
