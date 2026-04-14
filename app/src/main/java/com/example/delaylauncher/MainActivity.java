@@ -9,8 +9,6 @@ import android.widget.*;
 import androidx.appcompat.app.AppCompatActivity;
 import java.util.*;
 import android.os.CountDownTimer;
-import android.widget.ProgressBar;
-import android.widget.TextView;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -41,20 +39,11 @@ public class MainActivity extends AppCompatActivity {
         startButton = findViewById(R.id.startButton);
         resetButton = findViewById(R.id.resetButton);
 
-        progressBar.setVisibility(View.GONE);
-        countdownText.setVisibility(View.GONE);
-
-        ProgressBar progressBar = findViewById(R.id.progressBar);
-        TextView countdownText = findViewById(R.id.countdownText);
-
         FrameLayout circleContainer = findViewById(R.id.circleContainer);
         ProgressBar circleProgress = findViewById(R.id.circleProgress);
         TextView circleText = findViewById(R.id.circleText);
 
         circleContainer.setVisibility(View.GONE);
-        
-        progressBar.setVisibility(View.GONE);
-        countdownText.setVisibility(View.GONE);
 
         loadLaunchableApps();
         setupSpinners();
@@ -72,6 +61,11 @@ public class MainActivity extends AppCompatActivity {
 
          if (delay > 10) {
 
+             delaySpinner.setVisibility(View.GONE);
+             appSpinner.setVisibility(View.GONE);
+             startButton.setVisibility(View.GONE);
+             resetButton.setVisibility(View.GONE);
+
              circleContainer.setVisibility(View.VISIBLE);
 
              new CountDownTimer(delay * 1000, 50) {
@@ -81,13 +75,13 @@ public class MainActivity extends AppCompatActivity {
                      int progress = (int) ((delay * 1000 - millisUntilFinished) * 100 / (delay * 1000));
                      circleProgress.setProgress(progress);
 
-                     int secondsLeft = (int) (millisUntilFinished / 1000);
+                     int secondsLeft = (int) Math.ceil(millisUntilFinished / 1000.0);
                      circleText.setText(String.valueOf(secondsLeft));
                 }
 
                 public void onFinish() {
                      circleProgress.setProgress(100);
-                     circleText.setText("GO");
+                     circleText.setText("🚀");
 
                      startDelayedLaunch(0, packageName);
                 }
