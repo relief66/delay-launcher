@@ -2,7 +2,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <application
         android:label="Delay Launcher"
-        android:theme="@style/Theme.AppCompat.Light.NoActionBar">
+        android:theme="@style/Theme.DelayLauncher">
         <activity android:name=".MainActivity"
             android:exported="true">
             <intent-filter>
