@@ -2,7 +2,9 @@
 
     <!-- Background circle -->
     <item>
-        <shape android:shape="oval">
+        <shape android:shape="ring"
+            android:innerRadiusRatio="3"
+            android:thicknessRatio="8">
             <solid android:color="#333333"/>
         </shape>
     </item>
