@@ -132,3 +132,4 @@ public class MainActivity extends AppCompatActivity {
         appSpinner.setAdapter(new ArrayAdapter<>(this, android.R.layout.simple_spinner_dropdown_item, names));
     }
 }
+// trigger
