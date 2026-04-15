@@ -1,4 +1,3 @@
-
 package com.example.delaylauncher;
 
 import android.content.*;
@@ -31,9 +30,9 @@ public class MainActivity extends AppCompatActivity {
             finish();
             return;
         }
-  
+
         setContentView(R.layout.activity_main);
-        
+
         delaySpinner = findViewById(R.id.delaySpinner);
         appSpinner = findViewById(R.id.appSpinner);
         startButton = findViewById(R.id.startButton);
@@ -50,47 +49,56 @@ public class MainActivity extends AppCompatActivity {
 
         startButton.setOnClickListener(v -> {
 
-          int delay = Integer.parseInt(delaySpinner.getSelectedItem().toString());
-          String packageName = launchableApps.get(appSpinner.getSelectedItemPosition()).activityInfo.packageName;
+            int delay = Integer.parseInt(delaySpinner.getSelectedItem().toString());
+            String packageName = launchableApps.get(appSpinner.getSelectedItemPosition()).activityInfo.packageName;
 
-             prefs.edit()
-               .putBoolean("configured", true)
-               .putInt("delay", delay)
-               .putString("package", packageName)
-               .apply();
+            prefs.edit()
+                    .putBoolean("configured", true)
+                    .putInt("delay", delay)
+                    .putString("package", packageName)
+                    .apply();
 
-         if (delay > 10) {
+            if (delay > 10) {
 
-             delaySpinner.setVisibility(View.GONE);
-             appSpinner.setVisibility(View.GONE);
-             startButton.setVisibility(View.GONE);
-             resetButton.setVisibility(View.GONE);
+                // Nasconde UI
+                delaySpinner.setVisibility(View.GONE);
+                appSpinner.setVisibility(View.GONE);
+                startButton.setVisibility(View.GONE);
+                resetButton.setVisibility(View.GONE);
 
-             circleContainer.setVisibility(View.VISIBLE);
+                circleContainer.setVisibility(View.VISIBLE);
 
-             new CountDownTimer(delay * 1000, 50) {
+                final long totalTime = delay * 1000L;
 
-                 public void onTick(long millisUntilFinished) {
+                new CountDownTimer(totalTime, 16) {
 
-                     int progress = (int) ((delay * 1000 - millisUntilFinished) * 100 / (delay * 1000));
-                     circleProgress.setProgress(progress);
+                    public void onTick(long millisUntilFinished) {
 
-                     int secondsLeft = (int) Math.ceil(millisUntilFinished / 1000.0);
-                     circleText.setText(String.valueOf(secondsLeft));
-                }
+                        float progress = ((totalTime - millisUntilFinished) / (float) totalTime) * 100f;
+                        circleProgress.setProgress((int) progress);
 
-                public void onFinish() {
-                     circleProgress.setProgress(100);
-                     circleText.setText("🚀");
+                        int secondsLeft = (int) Math.ceil(millisUntilFinished / 1000.0);
+                        circleText.setText(String.valueOf(secondsLeft));
+                    }
 
-                     startDelayedLaunch(0, packageName);
-                }
+                    public void onFinish() {
+                        circleProgress.setProgress(100);
+                        circleText.setText("🚀");
 
-             }.start();
+                        // lancio diretto senza delay → evita lag
+                        Intent intent = getPackageManager().getLaunchIntentForPackage(packageName);
+                        if (intent != null) {
+                            startActivity(intent);
+                        }
 
-         } else {
-             startDelayedLaunch(delay, packageName);
-         }
+                        finish(); // chiude launcher → evita blocchi
+                    }
+
+                }.start();
+
+            } else {
+                startDelayedLaunch(delay, packageName);
+            }
 
         });
 
