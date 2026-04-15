@@ -51,14 +51,12 @@
 
         <ProgressBar
             android:id="@+id/circleProgress"
-            style="?android:attr/progressBarStyleHorizontal"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:rotation="270"
-            android:progress="0"
+            android:indeterminate="false"
             android:max="100"
-            android:progressTint="#00C853"
-            android:background="#333333"/>
+            android:progress="0"
+            android:progressDrawable="@drawable/circle_progress"/>
 
         <TextView
             android:id="@+id/circleText"
