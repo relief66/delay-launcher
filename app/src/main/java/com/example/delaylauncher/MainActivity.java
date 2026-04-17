@@ -138,11 +138,16 @@ public class MainActivity extends AppCompatActivity {
         });
 
         resetButton.setOnClickListener(v -> {
-           prefs.edit().clear().apply();
+            getSharedPreferences(PREFS, MODE_PRIVATE)
+               .edit()
+               .clear()
+               .commit(); // NON apply()
 
-           Intent intent = getIntent();
-           finish();
-           startActivity(intent);
+            Intent intent = new Intent(MainActivity.this, MainActivity.class);
+            intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
+
+            startActivity(intent);
+            finish();
         });
     }
 
