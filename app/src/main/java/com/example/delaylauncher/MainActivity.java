@@ -11,11 +11,12 @@ import android.os.CountDownTimer;
 
 public class MainActivity extends AppCompatActivity {
 
+    private boolean userInteracted = false;
     private Spinner delaySpinner, appSpinner;
     private Button startButton, resetButton;
     private List<ResolveInfo> launchableApps;
     private static final String PREFS = "DelayPrefs";
-
+    
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -30,6 +31,16 @@ public class MainActivity extends AppCompatActivity {
             appSpinner = findViewById(R.id.appSpinner);
             startButton = findViewById(R.id.startButton);
             resetButton = findViewById(R.id.resetButton);
+
+            delaySpinner.setOnTouchListener((v, e) -> {
+                userInteracted = true;
+                return false;
+            });
+
+            appSpinner.setOnTouchListener((v, e) -> {
+                userInteracted = true;
+                return false;
+            });
 
             FrameLayout circleContainer = findViewById(R.id.circleContainer);
             ProgressBar circleProgress = findViewById(R.id.circleProgress);
@@ -83,6 +94,7 @@ public class MainActivity extends AppCompatActivity {
         setupSpinners();
 
         startButton.setOnClickListener(v -> {
+            userInteracted = true;
 
             int delay = Integer.parseInt(delaySpinner.getSelectedItem().toString());
             String packageName = launchableApps.get(appSpinner.getSelectedItemPosition()).activityInfo.packageName;
@@ -138,6 +150,7 @@ public class MainActivity extends AppCompatActivity {
         });
 
         resetButton.setOnClickListener(v -> {
+            userInteracted = true;
             getSharedPreferences(PREFS, MODE_PRIVATE)
                .edit()
                .clear()
