@@ -160,7 +160,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void setupSpinners() {
-        String[] delays = {{"10","15","20","25","30","35","40","45","50","55","60"}};
+        String[] delays = {"10","15","20","25","30","35","40","45","50","55","60"};
         delaySpinner.setAdapter(new ArrayAdapter<>(this, android.R.layout.simple_spinner_dropdown_item, delays));
         delaySpinner.setSelection(2); // default 20
 
