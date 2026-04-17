@@ -155,7 +155,7 @@ public class MainActivity extends AppCompatActivity {
 
     private void loadLaunchableApps() {
         Intent intent = new Intent(Intent.ACTION_MAIN, null);
-        intent.addCategory(Intent.CATEGORY_LAUNCHER);
+        intent.addCategory(Intent.CATEGORY_HOME);
         launchableApps = getPackageManager().queryIntentActivities(intent, 0);
     }
 
@@ -171,4 +171,3 @@ public class MainActivity extends AppCompatActivity {
         appSpinner.setAdapter(new ArrayAdapter<>(this, android.R.layout.simple_spinner_dropdown_item, names));
     }
 }
-// trigger
