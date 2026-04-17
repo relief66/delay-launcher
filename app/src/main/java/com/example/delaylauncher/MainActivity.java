@@ -23,11 +23,46 @@ public class MainActivity extends AppCompatActivity {
         SharedPreferences prefs = getSharedPreferences(PREFS, MODE_PRIVATE);
 
         if (prefs.getBoolean("configured", false)) {
-            String pkg = prefs.getString("package", null);
-            if (pkg != null) {
-                startDelayedLaunch(prefs.getInt("delay", 10), pkg);
+
+            setContentView(R.layout.activity_main);
+
+            delaySpinner = findViewById(R.id.delaySpinner);
+            appSpinner = findViewById(R.id.appSpinner);
+            startButton = findViewById(R.id.startButton);
+            resetButton = findViewById(R.id.resetButton);
+
+            FrameLayout circleContainer = findViewById(R.id.circleContainer);
+            ProgressBar circleProgress = findViewById(R.id.circleProgress);
+            TextView circleText = findViewById(R.id.circleText);
+
+            loadLaunchableApps();
+            setupSpinners();
+
+            int savedDelay = prefs.getInt("delay", 20);
+            String savedPackage = prefs.getString("package", null);
+
+            delaySpinner.setSelection(Arrays.asList("10","15","20","25","30","35","40","45","50","55","60")
+                .indexOf(String.valueOf(savedDelay)));
+
+            if (savedPackage != null) {
+                for (int i = 0; i < launchableApps.size(); i++) {
+                    if (launchableApps.get(i).activityInfo.packageName.equals(savedPackage)) {
+                        appSpinner.setSelection(i);
+                        break;
+                    }
+                }
             }
-            finish();
+
+            new Handler().postDelayed(() -> {
+                int delay = savedDelay;
+                String packageName = savedPackage;
+
+                if (packageName != null) {
+                    startDelayedLaunch(delay, packageName);
+                    finish();
+                }
+            }, 5000);
+
             return;
         }
 
@@ -103,8 +138,11 @@ public class MainActivity extends AppCompatActivity {
         });
 
         resetButton.setOnClickListener(v -> {
-            prefs.edit().clear().apply();
-            recreate();
+           prefs.edit().clear().apply();
+
+           Intent intent = getIntent();
+           finish();
+           startActivity(intent);
         });
     }
 
@@ -122,8 +160,9 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void setupSpinners() {
-        String[] delays = {"10","15","30","45","60"};
+        String[] delays = {{"10","15","20","25","30","35","40","45","50","55","60"}};
         delaySpinner.setAdapter(new ArrayAdapter<>(this, android.R.layout.simple_spinner_dropdown_item, delays));
+        delaySpinner.setSelection(2); // default 20
 
         List<String> names = new ArrayList<>();
         for (ResolveInfo app : launchableApps) {
