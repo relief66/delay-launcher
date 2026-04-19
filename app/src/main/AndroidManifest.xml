@@ -3,6 +3,7 @@
     <application
         android:icon="@mipmap/ic_launcher"
         android:label="Delay Launcher"
+        android:roundIcon="@mipmap/ic_launcher"
         android:theme="@style/Theme.DelayLauncher">
         <activity android:name=".MainActivity"
             android:exported="true">
