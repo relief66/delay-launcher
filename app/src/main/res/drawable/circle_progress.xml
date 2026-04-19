@@ -2,10 +2,8 @@
 
     <!-- Background circle -->
     <item>
-        <shape android:shape="ring"
-            android:innerRadiusRatio="3"
-            android:thicknessRatio="8">
-            <solid android:color="#333333"/>
+        <shape android:shape="oval">
+            <solid android:color="#1E2A32"/>
         </shape>
     </item>
 
@@ -15,12 +13,12 @@
             android:fromDegrees="270"
             android:toDegrees="270">
 
-            <shape android:shape="ring"
-                android:innerRadiusRatio="3"
-                android:thicknessRatio="8"
-                android:useLevel="true">
+            <shape
+                android:shape="ring"
+                android:useLevel="true"
+                android:thickness="10dp">
 
-                <solid android:color="#00C853"/>
+                <solid android:color="#00E676"/>
             </shape>
 
         </rotate>
