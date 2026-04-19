@@ -3,3 +3,4 @@
     <background android:drawable="@android:color/black"/>
     <foreground android:drawable="@mipmap/ic_launcher"/>
 </adaptive-icon>
+// trigger
