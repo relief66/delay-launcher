@@ -8,6 +8,10 @@ import android.widget.*;
 import androidx.appcompat.app.AppCompatActivity;
 import java.util.*;
 import android.os.CountDownTimer;
+import android.net.Uri;
+import android.widget.VideoView;
+import android.media.ToneGenerator;
+import android.media.AudioManager;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -24,49 +28,55 @@ public class MainActivity extends AppCompatActivity {
         boolean isConfigured = prefs.getBoolean("configured", false);
 
         // 🚀 AVVIO AUTOMATICO CON UI MINIMA
-        if (isConfigured) {
+if (isConfigured) {
 
-            setContentView(R.layout.activity_main);
+    setContentView(R.layout.activity_main);
 
-            FrameLayout circleContainer = findViewById(R.id.circleContainer);
-            ProgressBar circleProgress = findViewById(R.id.circleProgress);
-            TextView circleText = findViewById(R.id.circleText);
+    VideoView videoView = findViewById(R.id.videoView);
+    TextView countdownText = findViewById(R.id.countdownText);
+    ToneGenerator toneGenerator = new ToneGenerator(AudioManager.STREAM_MUSIC, 100);
 
-            // nasconde UI non necessaria
-            findViewById(R.id.delaySpinner).setVisibility(View.GONE);
-            findViewById(R.id.appSpinner).setVisibility(View.GONE);
-            findViewById(R.id.startButton).setVisibility(View.GONE);
-            findViewById(R.id.resetButton).setVisibility(View.GONE);
+    // nascondi UI
+    findViewById(R.id.delaySpinner).setVisibility(View.GONE);
+    findViewById(R.id.appSpinner).setVisibility(View.GONE);
+    findViewById(R.id.startButton).setVisibility(View.GONE);
+    findViewById(R.id.resetButton).setVisibility(View.GONE);
+    findViewById(R.id.circleContainer).setVisibility(View.GONE);
 
-            circleContainer.setVisibility(View.VISIBLE);
+    videoView.setVisibility(View.VISIBLE);
+    countdownText.setVisibility(View.VISIBLE);
 
-            int savedDelay = prefs.getInt("delay", 20);
-            String savedPackage = prefs.getString("package", null);
+    int savedDelay = prefs.getInt("delay", 20);
+    String savedPackage = prefs.getString("package", null);
 
-            final long totalTime = savedDelay * 1000L;
+    // avvia video
+    Uri uri = Uri.parse("android.resource://" + getPackageName() + "/" + R.raw.anim);
+    videoView.setVideoURI(uri);
+    videoView.start();
 
-            new CountDownTimer(totalTime, 16) {
+    final long totalTime = savedDelay * 1000L;
 
-                public void onTick(long millisUntilFinished) {
-                    float progress = ((totalTime - millisUntilFinished) / (float) totalTime) * 100f;
-                    circleProgress.setProgress((int) progress);
+    new CountDownTimer(totalTime, 1000) {
 
-                    int secondsLeft = (int) Math.ceil(millisUntilFinished / 1000.0);
-                    circleText.setText(String.valueOf(secondsLeft));
-                }
-
-                public void onFinish() {
-                    if (savedPackage != null) {
-                        Intent intent = getPackageManager().getLaunchIntentForPackage(savedPackage);
-                        if (intent != null) startActivity(intent);
-                    }
-                    finish();
-                }
-
-            }.start();
-
-            return;
+        public void onTick(long millisUntilFinished) {
+            int secondsLeft = (int) Math.ceil(millisUntilFinished / 1000.0);
+            countdownText.setText(String.valueOf(secondsLeft));
+            toneGenerator.startTone(ToneGenerator.TONE_PROP_BEEP, 150);
         }
+
+        public void onFinish() {
+            toneGenerator.release();
+            if (savedPackage != null) {
+                Intent intent = getPackageManager().getLaunchIntentForPackage(savedPackage);
+                if (intent != null) startActivity(intent);
+            }
+            finish();
+        }
+
+    }.start();
+
+    return;
+}
 
         // 👇 PRIMA CONFIGURAZIONE
         setContentView(R.layout.activity_main);
