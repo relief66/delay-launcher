@@ -11,7 +11,6 @@ import android.os.CountDownTimer;
 
 public class MainActivity extends AppCompatActivity {
 
-    private boolean userInteracted = false;
     private Spinner delaySpinner, appSpinner;
     private Button startButton, resetButton;
     private List<ResolveInfo> launchableApps;
@@ -24,6 +23,24 @@ public class MainActivity extends AppCompatActivity {
         SharedPreferences prefs = getSharedPreferences(PREFS, MODE_PRIVATE);
         boolean isConfigured = prefs.getBoolean("configured", false);
 
+        // 🚀 STEP 1 — AVVIO SILENZIOSO
+        if (isConfigured) {
+
+            int savedDelay = prefs.getInt("delay", 20);
+            String savedPackage = prefs.getString("package", null);
+
+            if (savedPackage != null) {
+                new Handler(Looper.getMainLooper()).postDelayed(() -> {
+                    Intent intent = getPackageManager().getLaunchIntentForPackage(savedPackage);
+                    if (intent != null) startActivity(intent);
+                    finish();
+                }, savedDelay * 1000L);
+            }
+
+            return;
+        }
+
+        // 👇 SOLO PRIMA VOLTA → UI
         setContentView(R.layout.activity_main);
 
         delaySpinner = findViewById(R.id.delaySpinner);
@@ -40,42 +57,8 @@ public class MainActivity extends AppCompatActivity {
         loadLaunchableApps();
         setupSpinners();
 
-        // 👇 TRACK INTERAZIONE
-        delaySpinner.setOnTouchListener((v, e) -> { userInteracted = true; return false; });
-        appSpinner.setOnTouchListener((v, e) -> { userInteracted = true; return false; });
-
-        // 👇 SE GIÀ CONFIGURATO → AUTO START DOPO 5s (SE NON INTERAGISCI)
-        if (isConfigured) {
-
-            int savedDelay = prefs.getInt("delay", 20);
-            String savedPackage = prefs.getString("package", null);
-
-            // imposta delay selezionato
-            List<String> delayList = Arrays.asList("10","15","20","25","30","35","40","45","50","55","60");
-            int index = delayList.indexOf(String.valueOf(savedDelay));
-            if (index >= 0) delaySpinner.setSelection(index);
-
-            // imposta app selezionata
-            if (savedPackage != null) {
-                for (int i = 0; i < launchableApps.size(); i++) {
-                    if (launchableApps.get(i).activityInfo.packageName.equals(savedPackage)) {
-                        appSpinner.setSelection(i);
-                        break;
-                    }
-                }
-            }
-
-            new Handler().postDelayed(() -> {
-                if (!userInteracted && savedPackage != null) {
-                    startDelayedLaunch(savedDelay, savedPackage);
-                    finish();
-                }
-            }, 5000);
-        }
-
         // 👇 START
         startButton.setOnClickListener(v -> {
-            userInteracted = true;
 
             int delay = Integer.parseInt(delaySpinner.getSelectedItem().toString());
             String packageName = launchableApps.get(appSpinner.getSelectedItemPosition()).activityInfo.packageName;
@@ -118,9 +101,8 @@ public class MainActivity extends AppCompatActivity {
             }.start();
         });
 
-        // 👇 RESET
+        // 👇 RESET (torna allo stato iniziale)
         resetButton.setOnClickListener(v -> {
-            userInteracted = true;
 
             prefs.edit().clear().commit();
 
@@ -130,13 +112,6 @@ public class MainActivity extends AppCompatActivity {
             startActivity(intent);
             finish();
         });
-    }
-
-    private void startDelayedLaunch(int delaySeconds, String packageName) {
-        new Handler(Looper.getMainLooper()).postDelayed(() -> {
-            Intent intent = getPackageManager().getLaunchIntentForPackage(packageName);
-            if (intent != null) startActivity(intent);
-        }, delaySeconds * 1000L);
     }
 
     private void loadLaunchableApps() {
