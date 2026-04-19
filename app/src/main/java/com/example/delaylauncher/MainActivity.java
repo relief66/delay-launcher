@@ -23,25 +23,47 @@ public class MainActivity extends AppCompatActivity {
         SharedPreferences prefs = getSharedPreferences(PREFS, MODE_PRIVATE);
         boolean isConfigured = prefs.getBoolean("configured", false);
 
-        // 🚀 AVVIO SILENZIOSO
+        // 🚀 AVVIO AUTOMATICO CON UI MINIMA
         if (isConfigured) {
+
+            setContentView(R.layout.activity_main);
+
+            FrameLayout circleContainer = findViewById(R.id.circleContainer);
+            ProgressBar circleProgress = findViewById(R.id.circleProgress);
+            TextView circleText = findViewById(R.id.circleText);
+
+            // nasconde UI non necessaria
+            findViewById(R.id.delaySpinner).setVisibility(View.GONE);
+            findViewById(R.id.appSpinner).setVisibility(View.GONE);
+            findViewById(R.id.startButton).setVisibility(View.GONE);
+            findViewById(R.id.resetButton).setVisibility(View.GONE);
+
+            circleContainer.setVisibility(View.VISIBLE);
 
             int savedDelay = prefs.getInt("delay", 20);
             String savedPackage = prefs.getString("package", null);
 
-            if (savedPackage != null) {
+            final long totalTime = savedDelay * 1000L;
 
-                new Handler(Looper.getMainLooper()).postDelayed(() -> {
-                    Intent intent = getPackageManager().getLaunchIntentForPackage(savedPackage);
-                    if (intent != null) startActivity(intent);
+            new CountDownTimer(totalTime, 16) {
+
+                public void onTick(long millisUntilFinished) {
+                    float progress = ((totalTime - millisUntilFinished) / (float) totalTime) * 100f;
+                    circleProgress.setProgress((int) progress);
+
+                    int secondsLeft = (int) Math.ceil(millisUntilFinished / 1000.0);
+                    circleText.setText(String.valueOf(secondsLeft));
+                }
+
+                public void onFinish() {
+                    if (savedPackage != null) {
+                        Intent intent = getPackageManager().getLaunchIntentForPackage(savedPackage);
+                        if (intent != null) startActivity(intent);
+                    }
                     finish();
-                }, Math.max(1000, savedDelay * 1000L));
+                }
 
-            } else {
-                // fallback sicurezza
-                prefs.edit().clear().commit();
-                recreate();
-            }
+            }.start();
 
             return;
         }
