@@ -7,9 +7,6 @@ import android.view.*;
 import android.widget.*;
 import androidx.appcompat.app.AppCompatActivity;
 import java.util.*;
-import android.os.CountDownTimer;
-import android.media.ToneGenerator;
-import android.media.AudioManager;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -25,21 +22,8 @@ public class MainActivity extends AppCompatActivity {
         SharedPreferences prefs = getSharedPreferences(PREFS, MODE_PRIVATE);
         boolean isConfigured = prefs.getBoolean("configured", false);
 
-        // 🚀 AVVIO AUTOMATICO STABILE
+        // 🚀 AVVIO AUTOMATICO (VERSIONE MINIMA SENZA UI)
         if (isConfigured) {
-
-            setContentView(R.layout.activity_main);
-
-            FrameLayout circleContainer = findViewById(R.id.circleContainer);
-            ProgressBar circleProgress = findViewById(R.id.circleProgress);
-            TextView circleText = findViewById(R.id.circleText);
-
-            findViewById(R.id.delaySpinner).setVisibility(View.GONE);
-            findViewById(R.id.appSpinner).setVisibility(View.GONE);
-            findViewById(R.id.startButton).setVisibility(View.GONE);
-            findViewById(R.id.resetButton).setVisibility(View.GONE);
-
-            circleContainer.setVisibility(View.VISIBLE);
 
             int savedDelay = prefs.getInt("delay", 20);
             String savedPackage = prefs.getString("package", null);
@@ -49,54 +33,25 @@ public class MainActivity extends AppCompatActivity {
                 return;
             }
 
-            final long totalTime = savedDelay * 1000L;
-
-            // 👉 FIX CRUCIALE: ritardo avvio
             new Handler(Looper.getMainLooper()).postDelayed(() -> {
 
-                ToneGenerator tone = new ToneGenerator(AudioManager.STREAM_MUSIC, 100);
+                Intent intent = getPackageManager().getLaunchIntentForPackage(savedPackage);
+                if (intent != null) startActivity(intent);
 
-                new CountDownTimer(totalTime, 100) {
+                finishAffinity();
 
-                    public void onTick(long millisUntilFinished) {
-                        float progress = ((totalTime - millisUntilFinished) / (float) totalTime) * 100f;
-                        circleProgress.setProgress((int) progress);
-
-                        int secondsLeft = (int) Math.ceil(millisUntilFinished / 1000.0);
-                        circleText.setText(String.valueOf(secondsLeft));
-
-                        tone.startTone(ToneGenerator.TONE_PROP_BEEP, 80);
-                    }
-
-                    public void onFinish() {
-                        tone.release();
-
-                        Intent intent = getPackageManager().getLaunchIntentForPackage(savedPackage);
-                        if (intent != null) startActivity(intent);
-
-                        finishAffinity();
-                    }
-
-                }.start();
-
-            }, 300); // <-- QUESTO RISOLVE IL BLOCCO
+            }, savedDelay * 1000L);
 
             return;
         }
 
-        // 👇 PRIMA CONFIGURAZIONE
+        // 👇 PRIMA CONFIGURAZIONE (UI)
         setContentView(R.layout.activity_main);
 
         delaySpinner = findViewById(R.id.delaySpinner);
         appSpinner = findViewById(R.id.appSpinner);
         startButton = findViewById(R.id.startButton);
         resetButton = findViewById(R.id.resetButton);
-
-        FrameLayout circleContainer = findViewById(R.id.circleContainer);
-        ProgressBar circleProgress = findViewById(R.id.circleProgress);
-        TextView circleText = findViewById(R.id.circleText);
-
-        circleContainer.setVisibility(View.GONE);
 
         loadLaunchableApps();
         setupSpinners();
@@ -112,40 +67,19 @@ public class MainActivity extends AppCompatActivity {
                     .putString("package", packageName)
                     .apply();
 
-            delaySpinner.setVisibility(View.GONE);
-            appSpinner.setVisibility(View.GONE);
-            startButton.setVisibility(View.GONE);
-            resetButton.setVisibility(View.GONE);
-
-            circleContainer.setVisibility(View.VISIBLE);
-
-            final long totalTime = delay * 1000L;
-
+            // avvio diretto senza animazioni
             new Handler(Looper.getMainLooper()).postDelayed(() -> {
 
-                new CountDownTimer(totalTime, 100) {
+                Intent intent = getPackageManager().getLaunchIntentForPackage(packageName);
+                if (intent != null) startActivity(intent);
 
-                    public void onTick(long millisUntilFinished) {
-                        float progress = ((totalTime - millisUntilFinished) / (float) totalTime) * 100f;
-                        circleProgress.setProgress((int) progress);
+                finishAffinity();
 
-                        int secondsLeft = (int) Math.ceil(millisUntilFinished / 1000.0);
-                        circleText.setText(String.valueOf(secondsLeft));
-                    }
-
-                    public void onFinish() {
-                        Intent intent = getPackageManager().getLaunchIntentForPackage(packageName);
-                        if (intent != null) startActivity(intent);
-
-                        finishAffinity();
-                    }
-
-                }.start();
-
-            }, 300);
+            }, delay * 1000L);
         });
 
         resetButton.setOnClickListener(v -> {
+
             prefs.edit().clear().commit();
 
             Intent intent = new Intent(MainActivity.this, MainActivity.class);
