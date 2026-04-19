@@ -25,7 +25,7 @@ public class MainActivity extends AppCompatActivity {
         SharedPreferences prefs = getSharedPreferences(PREFS, MODE_PRIVATE);
         boolean isConfigured = prefs.getBoolean("configured", false);
 
-        // 🚀 AVVIO AUTOMATICO (VERSIONE STABILE)
+        // 🚀 AVVIO AUTOMATICO STABILE
         if (isConfigured) {
 
             setContentView(R.layout.activity_main);
@@ -34,7 +34,6 @@ public class MainActivity extends AppCompatActivity {
             ProgressBar circleProgress = findViewById(R.id.circleProgress);
             TextView circleText = findViewById(R.id.circleText);
 
-            // nasconde UI
             findViewById(R.id.delaySpinner).setVisibility(View.GONE);
             findViewById(R.id.appSpinner).setVisibility(View.GONE);
             findViewById(R.id.startButton).setVisibility(View.GONE);
@@ -50,10 +49,12 @@ public class MainActivity extends AppCompatActivity {
                 return;
             }
 
-            ToneGenerator tone = new ToneGenerator(AudioManager.STREAM_MUSIC, 100);
             final long totalTime = savedDelay * 1000L;
 
-            new Handler(Looper.getMainLooper()).post(() -> {
+            // 👉 FIX CRUCIALE: ritardo avvio
+            new Handler(Looper.getMainLooper()).postDelayed(() -> {
+
+                ToneGenerator tone = new ToneGenerator(AudioManager.STREAM_MUSIC, 100);
 
                 new CountDownTimer(totalTime, 100) {
 
@@ -64,7 +65,7 @@ public class MainActivity extends AppCompatActivity {
                         int secondsLeft = (int) Math.ceil(millisUntilFinished / 1000.0);
                         circleText.setText(String.valueOf(secondsLeft));
 
-                        tone.startTone(ToneGenerator.TONE_PROP_BEEP, 100);
+                        tone.startTone(ToneGenerator.TONE_PROP_BEEP, 80);
                     }
 
                     public void onFinish() {
@@ -78,7 +79,7 @@ public class MainActivity extends AppCompatActivity {
 
                 }.start();
 
-            });
+            }, 300); // <-- QUESTO RISOLVE IL BLOCCO
 
             return;
         }
@@ -120,7 +121,7 @@ public class MainActivity extends AppCompatActivity {
 
             final long totalTime = delay * 1000L;
 
-            new Handler(Looper.getMainLooper()).post(() -> {
+            new Handler(Looper.getMainLooper()).postDelayed(() -> {
 
                 new CountDownTimer(totalTime, 100) {
 
@@ -141,7 +142,7 @@ public class MainActivity extends AppCompatActivity {
 
                 }.start();
 
-            });
+            }, 300);
         });
 
         resetButton.setOnClickListener(v -> {
