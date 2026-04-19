@@ -16,66 +16,13 @@ public class MainActivity extends AppCompatActivity {
     private Button startButton, resetButton;
     private List<ResolveInfo> launchableApps;
     private static final String PREFS = "DelayPrefs";
-    
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
         SharedPreferences prefs = getSharedPreferences(PREFS, MODE_PRIVATE);
-
-        if (prefs.getBoolean("configured", false)) {
-
-            setContentView(R.layout.activity_main);
-
-            delaySpinner = findViewById(R.id.delaySpinner);
-            appSpinner = findViewById(R.id.appSpinner);
-            startButton = findViewById(R.id.startButton);
-            resetButton = findViewById(R.id.resetButton);
-
-            delaySpinner.setOnTouchListener((v, e) -> {
-                userInteracted = true;
-                return false;
-            });
-
-            appSpinner.setOnTouchListener((v, e) -> {
-                userInteracted = true;
-                return false;
-            });
-
-            FrameLayout circleContainer = findViewById(R.id.circleContainer);
-            ProgressBar circleProgress = findViewById(R.id.circleProgress);
-            TextView circleText = findViewById(R.id.circleText);
-
-            loadLaunchableApps();
-            setupSpinners();
-
-            int savedDelay = prefs.getInt("delay", 20);
-            String savedPackage = prefs.getString("package", null);
-
-            delaySpinner.setSelection(Arrays.asList("10","15","20","25","30","35","40","45","50","55","60")
-                .indexOf(String.valueOf(savedDelay)));
-
-            if (savedPackage != null) {
-                for (int i = 0; i < launchableApps.size(); i++) {
-                    if (launchableApps.get(i).activityInfo.packageName.equals(savedPackage)) {
-                        appSpinner.setSelection(i);
-                        break;
-                    }
-                }
-            }
-
-            new Handler().postDelayed(() -> {
-                int delay = savedDelay;
-                String packageName = savedPackage;
-
-                if (packageName != null) {
-                    startDelayedLaunch(delay, packageName);
-                    finish();
-                }
-            }, 5000);
-
-            return;
-        }
+        boolean isConfigured = prefs.getBoolean("configured", false);
 
         setContentView(R.layout.activity_main);
 
@@ -93,6 +40,40 @@ public class MainActivity extends AppCompatActivity {
         loadLaunchableApps();
         setupSpinners();
 
+        // 👇 TRACK INTERAZIONE
+        delaySpinner.setOnTouchListener((v, e) -> { userInteracted = true; return false; });
+        appSpinner.setOnTouchListener((v, e) -> { userInteracted = true; return false; });
+
+        // 👇 SE GIÀ CONFIGURATO → AUTO START DOPO 5s (SE NON INTERAGISCI)
+        if (isConfigured) {
+
+            int savedDelay = prefs.getInt("delay", 20);
+            String savedPackage = prefs.getString("package", null);
+
+            // imposta delay selezionato
+            List<String> delayList = Arrays.asList("10","15","20","25","30","35","40","45","50","55","60");
+            int index = delayList.indexOf(String.valueOf(savedDelay));
+            if (index >= 0) delaySpinner.setSelection(index);
+
+            // imposta app selezionata
+            if (savedPackage != null) {
+                for (int i = 0; i < launchableApps.size(); i++) {
+                    if (launchableApps.get(i).activityInfo.packageName.equals(savedPackage)) {
+                        appSpinner.setSelection(i);
+                        break;
+                    }
+                }
+            }
+
+            new Handler().postDelayed(() -> {
+                if (!userInteracted && savedPackage != null) {
+                    startDelayedLaunch(savedDelay, savedPackage);
+                    finish();
+                }
+            }, 5000);
+        }
+
+        // 👇 START
         startButton.setOnClickListener(v -> {
             userInteracted = true;
 
@@ -105,59 +86,46 @@ public class MainActivity extends AppCompatActivity {
                     .putString("package", packageName)
                     .apply();
 
-            if (delay > 10) {
+            delaySpinner.setVisibility(View.GONE);
+            appSpinner.setVisibility(View.GONE);
+            startButton.setVisibility(View.GONE);
+            resetButton.setVisibility(View.GONE);
 
-                // Nasconde UI
-                delaySpinner.setVisibility(View.GONE);
-                appSpinner.setVisibility(View.GONE);
-                startButton.setVisibility(View.GONE);
-                resetButton.setVisibility(View.GONE);
+            circleContainer.setVisibility(View.VISIBLE);
 
-                circleContainer.setVisibility(View.VISIBLE);
+            final long totalTime = delay * 1000L;
 
-                final long totalTime = delay * 1000L;
+            new CountDownTimer(totalTime, 16) {
 
-                new CountDownTimer(totalTime, 16) {
+                public void onTick(long millisUntilFinished) {
+                    float progress = ((totalTime - millisUntilFinished) / (float) totalTime) * 100f;
+                    circleProgress.setProgress((int) progress);
 
-                    public void onTick(long millisUntilFinished) {
+                    int secondsLeft = (int) Math.ceil(millisUntilFinished / 1000.0);
+                    circleText.setText(String.valueOf(secondsLeft));
+                }
 
-                        float progress = ((totalTime - millisUntilFinished) / (float) totalTime) * 100f;
-                        circleProgress.setProgress((int) progress);
+                public void onFinish() {
+                    circleProgress.setProgress(100);
+                    circleText.setText("🚀");
 
-                        int secondsLeft = (int) Math.ceil(millisUntilFinished / 1000.0);
-                        circleText.setText(String.valueOf(secondsLeft));
-                    }
+                    Intent intent = getPackageManager().getLaunchIntentForPackage(packageName);
+                    if (intent != null) startActivity(intent);
 
-                    public void onFinish() {
-                        circleProgress.setProgress(100);
-                        circleText.setText("🚀");
+                    finish();
+                }
 
-                        // lancio diretto senza delay → evita lag
-                        Intent intent = getPackageManager().getLaunchIntentForPackage(packageName);
-                        if (intent != null) {
-                            startActivity(intent);
-                        }
-
-                        finish(); // chiude launcher → evita blocchi
-                    }
-
-                }.start();
-
-            } else {
-                startDelayedLaunch(delay, packageName);
-            }
-
+            }.start();
         });
 
+        // 👇 RESET
         resetButton.setOnClickListener(v -> {
             userInteracted = true;
-            getSharedPreferences(PREFS, MODE_PRIVATE)
-               .edit()
-               .clear()
-               .commit(); // NON apply()
+
+            prefs.edit().clear().commit();
 
             Intent intent = new Intent(MainActivity.this, MainActivity.class);
-            intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
+            intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK | Intent.FLAG_ACTIVITY_NEW_TASK);
 
             startActivity(intent);
             finish();
