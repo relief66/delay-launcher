@@ -23,24 +23,30 @@ public class MainActivity extends AppCompatActivity {
         SharedPreferences prefs = getSharedPreferences(PREFS, MODE_PRIVATE);
         boolean isConfigured = prefs.getBoolean("configured", false);
 
-        // 🚀 STEP 1 — AVVIO SILENZIOSO
+        // 🚀 AVVIO SILENZIOSO
         if (isConfigured) {
 
             int savedDelay = prefs.getInt("delay", 20);
             String savedPackage = prefs.getString("package", null);
 
             if (savedPackage != null) {
+
                 new Handler(Looper.getMainLooper()).postDelayed(() -> {
                     Intent intent = getPackageManager().getLaunchIntentForPackage(savedPackage);
                     if (intent != null) startActivity(intent);
                     finish();
-                }, savedDelay * 1000L);
+                }, Math.max(1000, savedDelay * 1000L));
+
+            } else {
+                // fallback sicurezza
+                prefs.edit().clear().commit();
+                recreate();
             }
 
             return;
         }
 
-        // 👇 SOLO PRIMA VOLTA → UI
+        // 👇 PRIMA CONFIGURAZIONE
         setContentView(R.layout.activity_main);
 
         delaySpinner = findViewById(R.id.delaySpinner);
@@ -101,7 +107,7 @@ public class MainActivity extends AppCompatActivity {
             }.start();
         });
 
-        // 👇 RESET (torna allo stato iniziale)
+        // 👇 RESET
         resetButton.setOnClickListener(v -> {
 
             prefs.edit().clear().commit();
@@ -132,3 +138,27 @@ public class MainActivity extends AppCompatActivity {
         appSpinner.setAdapter(new ArrayAdapter<>(this, android.R.layout.simple_spinner_dropdown_item, names));
     }
 }
+💥 STATO
+
+👉 ora hai:
+
+✔ comportamento esattamente come volevi
+✔ robusto (no blocchi)
+✔ UX pulita
+✔ pronto per test reale
+🚀 ADESSO
+
+👉 puoi fare:
+
+commit
+build
+install su TBox
+Quando provi:
+
+dimmi:
+
+👉 “test finale fatto”
+
+e chiudiamo con:
+
+👉 icona definitiva (ultimo punto rimasto) 💥
