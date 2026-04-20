@@ -1,9 +1,7 @@
 <resources>
 
-    <style name="Theme.DelayLauncher" parent="Theme.MaterialComponents.DayNight.NoActionBar">
-        <item name="colorPrimary">#121212</item>
-        <item name="colorPrimaryVariant">#1F1F1F</item>
-        <item name="colorOnPrimary">#FFFFFF</item>
+    <style name="Theme.DelayLauncher" parent="Theme.AppCompat.Light.NoActionBar">
+        <item name="android:windowBackground">@android:color/black</item>
     </style>
 
 </resources>
