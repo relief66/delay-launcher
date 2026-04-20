@@ -9,20 +9,18 @@
         android:orientation="vertical"
         android:gravity="center"
         android:padding="24dp"
-        android:background="@android:color/black"
+        android:background="@drawable/bg_gradient"
         android:layout_width="match_parent"
         android:layout_height="match_parent">
 
         <TextView
             android:text="DELAY LAUNCHER"
-            android:textSize="34sp"
+            android:textSize="36sp"
             android:textStyle="bold"
-            android:letterSpacing="0.08"
+            android:letterSpacing="0.1"
             android:textColor="#00E676"
-            android:shadowColor="#000000"
-            android:shadowDx="0"
-            android:shadowDy="2"
-            android:shadowRadius="4"
+            android:shadowColor="#000"
+            android:shadowRadius="6"
             android:layout_marginBottom="30dp"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"/>
@@ -37,26 +35,28 @@
             android:id="@+id/appSpinner"
             android:layout_width="300dp"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="20dp"/>
+            android:layout_marginBottom="24dp"/>
 
         <Button
             android:id="@+id/startButton"
             android:text="AVVIA"
-            android:textSize="18sp"
-            android:layout_width="260dp"
+            android:textSize="20sp"
+            android:backgroundTint="#00E676"
+            android:textColor="#000"
+            android:layout_width="300dp"
             android:layout_height="wrap_content"/>
 
         <Button
             android:id="@+id/resetButton"
             android:text="RESET"
             android:layout_marginTop="10dp"
-            android:layout_width="260dp"
+            android:layout_width="300dp"
             android:layout_height="wrap_content"/>
 
         <FrameLayout
             android:id="@+id/circleContainer"
-            android:layout_width="260dp"
-            android:layout_height="260dp"
+            android:layout_width="280dp"
+            android:layout_height="280dp"
             android:layout_marginTop="30dp">
 
             <ProgressBar
@@ -71,7 +71,7 @@
             <TextView
                 android:id="@+id/circleText"
                 android:text="0"
-                android:textSize="48sp"
+                android:textSize="56sp"
                 android:textStyle="bold"
                 android:textColor="#FFFFFF"
                 android:layout_gravity="center"
