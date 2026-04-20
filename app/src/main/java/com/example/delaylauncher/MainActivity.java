@@ -38,17 +38,12 @@ public class MainActivity extends AppCompatActivity {
         loadLaunchableApps();
         setupSpinners();
 
-        // 🚀 AVVIO AUTOMATICO
         if (isConfigured) {
 
             int savedDelay = prefs.getInt("delay", 20);
             String savedPackage = prefs.getString("package", null);
 
-            delaySpinner.setVisibility(Spinner.GONE);
-            appSpinner.setVisibility(Spinner.GONE);
-            startButton.setVisibility(Button.GONE);
-            resetButton.setVisibility(Button.GONE);
-
+            hideSetupUI();
             circleContainer.setVisibility(FrameLayout.VISIBLE);
 
             if (savedPackage != null) {
@@ -79,7 +74,6 @@ public class MainActivity extends AppCompatActivity {
             return;
         }
 
-        // 👇 PRIMA CONFIGURAZIONE
         startButton.setOnClickListener(v -> {
 
             int delay = Integer.parseInt(delaySpinner.getSelectedItem().toString());
@@ -91,11 +85,7 @@ public class MainActivity extends AppCompatActivity {
                     .putString("package", pkg)
                     .apply();
 
-            delaySpinner.setVisibility(Spinner.GONE);
-            appSpinner.setVisibility(Spinner.GONE);
-            startButton.setVisibility(Button.GONE);
-            resetButton.setVisibility(Button.GONE);
-
+            hideSetupUI();
             circleContainer.setVisibility(FrameLayout.VISIBLE);
 
             new CountDownTimer(delay * 1000L, 100) {
@@ -123,6 +113,13 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
+    private void hideSetupUI() {
+        delaySpinner.setVisibility(Spinner.GONE);
+        appSpinner.setVisibility(Spinner.GONE);
+        startButton.setVisibility(Button.GONE);
+        resetButton.setVisibility(Button.GONE);
+    }
+
     private void loadLaunchableApps() {
         Intent intent = new Intent(Intent.ACTION_MAIN, null);
         intent.addCategory(Intent.CATEGORY_HOME);
@@ -130,14 +127,23 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void setupSpinners() {
+
         String[] delays = {"10","15","20","25","30","35","40","45","50","55","60"};
-        delaySpinner.setAdapter(new ArrayAdapter<>(this, android.R.layout.simple_spinner_dropdown_item, delays));
+
+        ArrayAdapter<String> delayAdapter =
+                new ArrayAdapter<>(this, R.layout.spinner_item, delays);
+        delayAdapter.setDropDownViewResource(R.layout.spinner_item);
+        delaySpinner.setAdapter(delayAdapter);
         delaySpinner.setSelection(2);
 
         List<String> names = new ArrayList<>();
         for (ResolveInfo app : launchableApps) {
             names.add(app.loadLabel(getPackageManager()).toString());
         }
-        appSpinner.setAdapter(new ArrayAdapter<>(this, android.R.layout.simple_spinner_dropdown_item, names));
+
+        ArrayAdapter<String> appAdapter =
+                new ArrayAdapter<>(this, R.layout.spinner_item, names);
+        appAdapter.setDropDownViewResource(R.layout.spinner_item);
+        appSpinner.setAdapter(appAdapter);
     }
 }
