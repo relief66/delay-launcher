@@ -3,10 +3,10 @@ package com.example.delaylauncher;
 import android.content.*;
 import android.content.pm.*;
 import android.os.*;
-import android.view.*;
 import android.widget.*;
 import androidx.appcompat.app.AppCompatActivity;
 import java.util.*;
+import android.os.CountDownTimer;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -22,30 +22,6 @@ public class MainActivity extends AppCompatActivity {
         SharedPreferences prefs = getSharedPreferences(PREFS, MODE_PRIVATE);
         boolean isConfigured = prefs.getBoolean("configured", false);
 
-        // 🚀 AVVIO AUTOMATICO (VERSIONE MINIMA SENZA UI)
-        if (isConfigured) {
-
-            int savedDelay = prefs.getInt("delay", 20);
-            String savedPackage = prefs.getString("package", null);
-
-            if (savedPackage == null) {
-                finish();
-                return;
-            }
-
-            new Handler(Looper.getMainLooper()).postDelayed(() -> {
-
-                Intent intent = getPackageManager().getLaunchIntentForPackage(savedPackage);
-                if (intent != null) startActivity(intent);
-
-                finishAffinity();
-
-            }, savedDelay * 1000L);
-
-            return;
-        }
-
-        // 👇 PRIMA CONFIGURAZIONE (UI)
         setContentView(R.layout.activity_main);
 
         delaySpinner = findViewById(R.id.delaySpinner);
@@ -53,40 +29,97 @@ public class MainActivity extends AppCompatActivity {
         startButton = findViewById(R.id.startButton);
         resetButton = findViewById(R.id.resetButton);
 
+        FrameLayout circleContainer = findViewById(R.id.circleContainer);
+        ProgressBar circleProgress = findViewById(R.id.circleProgress);
+        TextView circleText = findViewById(R.id.circleText);
+
+        circleContainer.setVisibility(FrameLayout.GONE);
+
         loadLaunchableApps();
         setupSpinners();
 
+        // 🚀 AVVIO AUTOMATICO
+        if (isConfigured) {
+
+            int savedDelay = prefs.getInt("delay", 20);
+            String savedPackage = prefs.getString("package", null);
+
+            delaySpinner.setVisibility(Spinner.GONE);
+            appSpinner.setVisibility(Spinner.GONE);
+            startButton.setVisibility(Button.GONE);
+            resetButton.setVisibility(Button.GONE);
+
+            circleContainer.setVisibility(FrameLayout.VISIBLE);
+
+            if (savedPackage != null) {
+
+                new Handler(Looper.getMainLooper()).postDelayed(() -> {
+
+                    new CountDownTimer(savedDelay * 1000L, 100) {
+
+                        public void onTick(long millisUntilFinished) {
+                            int progress = (int)((savedDelay * 1000L - millisUntilFinished) * 100 / (savedDelay * 1000L));
+                            circleProgress.setProgress(progress);
+
+                            int sec = (int)Math.ceil(millisUntilFinished / 1000.0);
+                            circleText.setText(String.valueOf(sec));
+                        }
+
+                        public void onFinish() {
+                            Intent intent = getPackageManager().getLaunchIntentForPackage(savedPackage);
+                            if (intent != null) startActivity(intent);
+                            finishAffinity();
+                        }
+
+                    }.start();
+
+                }, 200);
+            }
+
+            return;
+        }
+
+        // 👇 PRIMA CONFIGURAZIONE
         startButton.setOnClickListener(v -> {
 
             int delay = Integer.parseInt(delaySpinner.getSelectedItem().toString());
-            String packageName = launchableApps.get(appSpinner.getSelectedItemPosition()).activityInfo.packageName;
+            String pkg = launchableApps.get(appSpinner.getSelectedItemPosition()).activityInfo.packageName;
 
             prefs.edit()
                     .putBoolean("configured", true)
                     .putInt("delay", delay)
-                    .putString("package", packageName)
+                    .putString("package", pkg)
                     .apply();
 
-            // avvio diretto senza animazioni
-            new Handler(Looper.getMainLooper()).postDelayed(() -> {
+            delaySpinner.setVisibility(Spinner.GONE);
+            appSpinner.setVisibility(Spinner.GONE);
+            startButton.setVisibility(Button.GONE);
+            resetButton.setVisibility(Button.GONE);
 
-                Intent intent = getPackageManager().getLaunchIntentForPackage(packageName);
-                if (intent != null) startActivity(intent);
+            circleContainer.setVisibility(FrameLayout.VISIBLE);
 
-                finishAffinity();
+            new CountDownTimer(delay * 1000L, 100) {
 
-            }, delay * 1000L);
+                public void onTick(long millisUntilFinished) {
+                    int progress = (int)((delay * 1000L - millisUntilFinished) * 100 / (delay * 1000L));
+                    circleProgress.setProgress(progress);
+
+                    int sec = (int)Math.ceil(millisUntilFinished / 1000.0);
+                    circleText.setText(String.valueOf(sec));
+                }
+
+                public void onFinish() {
+                    Intent intent = getPackageManager().getLaunchIntentForPackage(pkg);
+                    if (intent != null) startActivity(intent);
+                    finishAffinity();
+                }
+
+            }.start();
         });
 
         resetButton.setOnClickListener(v -> {
-
             prefs.edit().clear().commit();
-
-            Intent intent = new Intent(MainActivity.this, MainActivity.class);
-            intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK | Intent.FLAG_ACTIVITY_NEW_TASK);
-
-            startActivity(intent);
-            finish();
+            recreate();
         });
     }
 
