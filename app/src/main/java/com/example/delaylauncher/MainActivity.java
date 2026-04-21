@@ -4,7 +4,8 @@ import android.animation.ObjectAnimator;
 import android.animation.ValueAnimator;
 import android.content.*;
 import android.content.pm.*;
-import android.media.MediaPlayer;
+import android.media.ToneGenerator;
+import android.media.AudioManager;
 import android.os.*;
 import android.view.*;
 import android.widget.*;
@@ -20,7 +21,7 @@ public class MainActivity extends AppCompatActivity {
 
     private ObjectAnimator scaleXAnim, scaleYAnim;
     private CountDownTimer timer;
-    private MediaPlayer player;
+    private ToneGenerator tone;
 
     private FrameLayout circleContainer;
     private ProgressBar circleProgress;
@@ -47,6 +48,9 @@ public class MainActivity extends AppCompatActivity {
 
         loadLaunchableApps();
         setupSpinners();
+
+        // inizializza suono (soft elegante)
+        tone = new ToneGenerator(AudioManager.STREAM_NOTIFICATION, 60);
 
         // TAP = interrompe countdown
         circleContainer.setOnTouchListener((v, e) -> {
@@ -82,8 +86,6 @@ public class MainActivity extends AppCompatActivity {
         circleContainer.setVisibility(View.VISIBLE);
         startBreathingAnimation();
 
-        player = MediaPlayer.create(this, R.raw.tick);
-
         timer = new CountDownTimer(delay * 1000L, 1000) {
 
             public void onTick(long ms) {
@@ -93,8 +95,9 @@ public class MainActivity extends AppCompatActivity {
                 int progress = (int)((delay * 1000L - ms) * 100 / (delay * 1000L));
                 circleProgress.setProgress(progress);
 
-                if (player != null) {
-                    try { player.start(); } catch (Exception ignored) {}
+                // 🔊 suono soft elegante
+                if (tone != null) {
+                    tone.startTone(ToneGenerator.TONE_PROP_BEEP, 120);
                 }
             }
 
@@ -102,7 +105,6 @@ public class MainActivity extends AppCompatActivity {
 
                 stopAll();
 
-                // 🔥 CHIUSURA COMPLETA + LANCIO PULITO
                 new Handler(Looper.getMainLooper()).post(() -> {
 
                     Intent intent = getPackageManager().getLaunchIntentForPackage(pkg);
@@ -116,7 +118,7 @@ public class MainActivity extends AppCompatActivity {
                     }
 
                     finishAffinity();
-                    System.exit(0); // elimina ogni residuo
+                    System.exit(0);
                 });
             }
 
@@ -125,11 +127,6 @@ public class MainActivity extends AppCompatActivity {
 
     private void stopAll() {
         if (timer != null) timer.cancel();
-
-        if (player != null) {
-            try { player.release(); } catch (Exception ignored) {}
-            player = null;
-        }
 
         if (scaleXAnim != null) scaleXAnim.cancel();
         if (scaleYAnim != null) scaleYAnim.cancel();
@@ -196,6 +193,6 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        stopAll();
+        if (tone != null) tone.release();
     }
 }
