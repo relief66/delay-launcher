@@ -1,25 +1,10 @@
-apply plugin: 'com.android.application'
-
 android {
-    namespace 'com.example.delaylauncher'
-    compileSdk 33
-
     defaultConfig {
         applicationId "com.example.delaylauncher"
         minSdk 21
-        targetSdk 33
-        versionCode 1
-        versionName "1.0"
-    }
+        targetSdk 34
 
-    buildTypes {
-        release {
-            minifyEnabled false
-        }
+        versionCode 3
+        versionName "1.2"
     }
-}
-
-dependencies {
-    implementation 'androidx.appcompat:appcompat:1.6.1'
-    implementation 'com.google.android.material:material:1.9.0'
 }
