@@ -132,7 +132,7 @@ public class MainActivity extends AppCompatActivity {
 
         ArrayAdapter<String> delayAdapter =
                 new ArrayAdapter<>(this, R.layout.spinner_item, delays);
-        delayAdapter.setDropDownViewResource(R.layout.spinner_item);
+        delayAdapter.setDropDownViewResource(R.layout.spinner_dropdown_item);
         delaySpinner.setAdapter(delayAdapter);
         delaySpinner.setSelection(2);
 
