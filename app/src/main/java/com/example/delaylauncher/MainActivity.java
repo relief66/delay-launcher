@@ -15,6 +15,9 @@ public class MainActivity extends AppCompatActivity {
     private List<ResolveInfo> launchableApps;
     private static final String PREFS = "DelayPrefs";
 
+    private android.animation.ObjectAnimator scaleXAnim;
+    private android.animation.ObjectAnimator scaleYAnim;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -122,23 +125,20 @@ public class MainActivity extends AppCompatActivity {
         circleContainer.setScaleX(0.95f);
         circleContainer.setScaleY(0.95f);
 
-        android.animation.ObjectAnimator scaleX =
-                android.animation.ObjectAnimator.ofFloat(circleContainer, "scaleX", 0.95f, 1.05f);
+        scaleXAnim = android.animation.ObjectAnimator.ofFloat(circleContainer, "scaleX", 0.95f, 1.05f);
+        scaleYAnim = android.animation.ObjectAnimator.ofFloat(circleContainer, "scaleY", 0.95f, 1.05f);
 
-        android.animation.ObjectAnimator scaleY =
-                android.animation.ObjectAnimator.ofFloat(circleContainer, "scaleY", 0.95f, 1.05f);
+        scaleXAnim.setDuration(900);
+        scaleYAnim.setDuration(900);
 
-        scaleX.setDuration(900);
-        scaleY.setDuration(900);
+        scaleXAnim.setRepeatMode(android.animation.ValueAnimator.REVERSE);
+        scaleYAnim.setRepeatMode(android.animation.ValueAnimator.REVERSE);
 
-        scaleX.setRepeatMode(android.animation.ValueAnimator.REVERSE);
-        scaleY.setRepeatMode(android.animation.ValueAnimator.REVERSE);
+        scaleXAnim.setRepeatCount(android.animation.ValueAnimator.INFINITE);
+        scaleYAnim.setRepeatCount(android.animation.ValueAnimator.INFINITE);
 
-        scaleX.setRepeatCount(android.animation.ValueAnimator.INFINITE);
-        scaleY.setRepeatCount(android.animation.ValueAnimator.INFINITE);
-
-        scaleX.start();
-        scaleY.start();
+        scaleXAnim.start();
+        scaleYAnim.start();
     }
 
     private void hideSetupUI() {
@@ -173,5 +173,13 @@ public class MainActivity extends AppCompatActivity {
                 new ArrayAdapter<>(this, R.layout.spinner_item, names);
         appAdapter.setDropDownViewResource(R.layout.spinner_dropdown_item);
         appSpinner.setAdapter(appAdapter);
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+
+        if (scaleXAnim != null) scaleXAnim.cancel();
+        if (scaleYAnim != null) scaleYAnim.cancel();
     }
 }
