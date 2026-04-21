@@ -143,7 +143,7 @@ public class MainActivity extends AppCompatActivity {
 
         ArrayAdapter<String> appAdapter =
                 new ArrayAdapter<>(this, R.layout.spinner_item, names);
-        appAdapter.setDropDownViewResource(R.layout.spinner_item);
+        appAdapter.setDropDownViewResource(R.layout.spinner_dropdown_item);
         appSpinner.setAdapter(appAdapter);
     }
 }
