@@ -19,7 +19,6 @@ public class MainActivity extends AppCompatActivity {
     private List<ResolveInfo> launchableApps;
     private static final String PREFS = "DelayPrefs";
 
-    private ObjectAnimator scaleXAnim, scaleYAnim;
     private CountDownTimer timer;
     private ToneGenerator tone;
 
@@ -30,9 +29,6 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
-        SharedPreferences prefs = getSharedPreferences(PREFS, MODE_PRIVATE);
-        boolean isConfigured = prefs.getBoolean("configured", false);
 
         setContentView(R.layout.activity_main);
 
@@ -49,21 +45,21 @@ public class MainActivity extends AppCompatActivity {
         loadLaunchableApps();
         setupSpinners();
 
-        // inizializza suono (soft elegante)
         tone = new ToneGenerator(AudioManager.STREAM_NOTIFICATION, 60);
 
-        // TAP = interrompe countdown
-        circleContainer.setOnTouchListener((v, e) -> {
-            stopAll();
-            showSetupUI();
-            return true;
-        });
+        SharedPreferences prefs = getSharedPreferences(PREFS, MODE_PRIVATE);
+        boolean isConfigured = prefs.getBoolean("configured", false);
 
-        if (isConfigured) {
-            int savedDelay = prefs.getInt("delay", 20);
-            String pkg = prefs.getString("package", null);
-            startCountdown(savedDelay, pkg);
-        }
+        // 🔥 FIX CRITICO → delay di stabilizzazione Activity
+        new Handler(Looper.getMainLooper()).postDelayed(() -> {
+
+            if (isConfigured) {
+                int savedDelay = prefs.getInt("delay", 20);
+                String pkg = prefs.getString("package", null);
+                startCountdown(savedDelay, pkg);
+            }
+
+        }, 500); // 👈 fondamentale
 
         startButton.setOnClickListener(v -> {
 
@@ -78,13 +74,18 @@ public class MainActivity extends AppCompatActivity {
 
             startCountdown(delay, pkg);
         });
+
+        circleContainer.setOnTouchListener((v, e) -> {
+            stopAll();
+            showSetupUI();
+            return true;
+        });
     }
 
     private void startCountdown(int delay, String pkg) {
 
         hideSetupUI();
         circleContainer.setVisibility(View.VISIBLE);
-        startBreathingAnimation();
 
         timer = new CountDownTimer(delay * 1000L, 1000) {
 
@@ -95,9 +96,8 @@ public class MainActivity extends AppCompatActivity {
                 int progress = (int)((delay * 1000L - ms) * 100 / (delay * 1000L));
                 circleProgress.setProgress(progress);
 
-                // 🔊 suono soft elegante
                 if (tone != null) {
-                    tone.startTone(ToneGenerator.TONE_PROP_BEEP, 120);
+                    tone.startTone(ToneGenerator.TONE_PROP_BEEP, 100);
                 }
             }
 
@@ -105,21 +105,13 @@ public class MainActivity extends AppCompatActivity {
 
                 stopAll();
 
-                new Handler(Looper.getMainLooper()).post(() -> {
+                Intent intent = getPackageManager().getLaunchIntentForPackage(pkg);
+                if (intent != null) {
+                    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                    startActivity(intent);
+                }
 
-                    Intent intent = getPackageManager().getLaunchIntentForPackage(pkg);
-                    if (intent != null) {
-                        intent.addFlags(
-                                Intent.FLAG_ACTIVITY_NEW_TASK |
-                                Intent.FLAG_ACTIVITY_CLEAR_TASK |
-                                Intent.FLAG_ACTIVITY_CLEAR_TOP
-                        );
-                        startActivity(intent);
-                    }
-
-                    finishAffinity();
-                    System.exit(0);
-                });
+                finish();
             }
 
         }.start();
@@ -127,9 +119,6 @@ public class MainActivity extends AppCompatActivity {
 
     private void stopAll() {
         if (timer != null) timer.cancel();
-
-        if (scaleXAnim != null) scaleXAnim.cancel();
-        if (scaleYAnim != null) scaleYAnim.cancel();
     }
 
     private void showSetupUI() {
@@ -145,27 +134,9 @@ public class MainActivity extends AppCompatActivity {
         startButton.setVisibility(View.GONE);
     }
 
-    private void startBreathingAnimation() {
-
-        scaleXAnim = ObjectAnimator.ofFloat(circleContainer, "scaleX", 0.95f, 1.05f);
-        scaleYAnim = ObjectAnimator.ofFloat(circleContainer, "scaleY", 0.95f, 1.05f);
-
-        scaleXAnim.setDuration(900);
-        scaleYAnim.setDuration(900);
-
-        scaleXAnim.setRepeatMode(ValueAnimator.REVERSE);
-        scaleYAnim.setRepeatMode(ValueAnimator.REVERSE);
-
-        scaleXAnim.setRepeatCount(ValueAnimator.INFINITE);
-        scaleYAnim.setRepeatCount(ValueAnimator.INFINITE);
-
-        scaleXAnim.start();
-        scaleYAnim.start();
-    }
-
     private void loadLaunchableApps() {
         Intent intent = new Intent(Intent.ACTION_MAIN, null);
-        intent.addCategory(Intent.CATEGORY_LAUNCHER); // ✅ FIX
+        intent.addCategory(Intent.CATEGORY_LAUNCHER);
         launchableApps = getPackageManager().queryIntentActivities(intent, 0);
     }
 
