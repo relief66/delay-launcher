@@ -1,26 +1,26 @@
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <!-- Background circle -->
+    <!-- SFONDO -->
     <item>
         <shape android:shape="oval">
-            <solid android:color="#1E2A32"/>
+            <solid android:color="#101820"/>
         </shape>
     </item>
 
-    <!-- Progress circle -->
+    <!-- CERCHIO ANIMATO -->
     <item>
-        <rotate
-            android:fromDegrees="270"
-            android:toDegrees="270">
-
+        <rotate android:fromDegrees="270" android:toDegrees="270">
             <shape
                 android:shape="ring"
                 android:useLevel="true"
-                android:thickness="10dp">
+                android:thickness="14dp">
 
-                <solid android:color="#00E676"/>
+                <gradient
+                    android:startColor="#00E676"
+                    android:centerColor="#00C853"
+                    android:endColor="#00E676"
+                    android:angle="0"/>
             </shape>
-
         </rotate>
     </item>
 
