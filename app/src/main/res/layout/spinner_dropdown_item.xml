@@ -3,7 +3,7 @@
     android:id="@android:id/text1"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:textColor="#1565C0"   <!-- BLU LEGGIBILE -->
+    android:textColor="#1565C0"  
     android:textSize="20sp"
     android:padding="12dp"
     android:background="#FFFFFF"
