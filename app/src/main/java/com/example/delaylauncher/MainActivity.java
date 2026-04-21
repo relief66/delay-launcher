@@ -165,7 +165,7 @@ public class MainActivity extends AppCompatActivity {
 
     private void loadLaunchableApps() {
         Intent intent = new Intent(Intent.ACTION_MAIN, null);
-        intent.addCategory(Intent.CATEGORY_HOME);
+        intent.addCategory(Intent.CATEGORY_LAUNCHER); // ✅ FIX
         launchableApps = getPackageManager().queryIntentActivities(intent, 0);
     }
 
