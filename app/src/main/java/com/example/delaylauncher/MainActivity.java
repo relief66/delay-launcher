@@ -35,6 +35,18 @@ public class MainActivity extends AppCompatActivity {
 
         circleContainer.setVisibility(FrameLayout.GONE);
 
+        circleContainer.setScaleX(0.95f);
+        circleContainer.setScaleY(0.95f);
+
+        circleContainer.animate()
+            
+        .scaleX(1.05f)
+        .scaleY(1.05f)
+        .setDuration(900)
+        .setRepeatMode(android.animation.ValueAnimator.REVERSE)
+        .setRepeatCount(android.animation.ValueAnimator.INFINITE)
+        .start();
+
         loadLaunchableApps();
         setupSpinners();
 
