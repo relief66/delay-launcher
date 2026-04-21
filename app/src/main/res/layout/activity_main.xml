@@ -17,10 +17,7 @@
             android:text="DELAY LAUNCHER"
             android:textSize="36sp"
             android:textStyle="bold"
-            android:letterSpacing="0.1"
             android:textColor="#00E676"
-            android:shadowColor="#000"
-            android:shadowRadius="6"
             android:layout_marginBottom="30dp"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"/>
@@ -41,15 +38,6 @@
             android:id="@+id/startButton"
             android:text="AVVIA"
             android:textSize="20sp"
-            android:backgroundTint="#00E676"
-            android:textColor="#000"
-            android:layout_width="300dp"
-            android:layout_height="wrap_content"/>
-
-        <Button
-            android:id="@+id/resetButton"
-            android:text="RESET"
-            android:layout_marginTop="10dp"
             android:layout_width="300dp"
             android:layout_height="wrap_content"/>
 
@@ -70,9 +58,6 @@
 
             <TextView
                 android:id="@+id/circleText"
-                android:letterSpacing="0.1"
-                android:shadowColor="#00E676"
-                android:shadowRadius="8"
                 android:text="0"
                 android:textSize="56sp"
                 android:textStyle="bold"
