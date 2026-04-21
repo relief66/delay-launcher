@@ -35,21 +35,10 @@ public class MainActivity extends AppCompatActivity {
 
         circleContainer.setVisibility(FrameLayout.GONE);
 
-        circleContainer.setScaleX(0.95f);
-        circleContainer.setScaleY(0.95f);
-
-        circleContainer.animate()
-            
-        .scaleX(1.05f)
-        .scaleY(1.05f)
-        .setDuration(900)
-        .setRepeatMode(android.animation.ValueAnimator.REVERSE)
-        .setRepeatCount(android.animation.ValueAnimator.INFINITE)
-        .start();
-
         loadLaunchableApps();
         setupSpinners();
 
+        // 🚀 AVVIO AUTOMATICO
         if (isConfigured) {
 
             int savedDelay = prefs.getInt("delay", 20);
@@ -57,6 +46,7 @@ public class MainActivity extends AppCompatActivity {
 
             hideSetupUI();
             circleContainer.setVisibility(FrameLayout.VISIBLE);
+            startBreathingAnimation(circleContainer);
 
             if (savedPackage != null) {
 
@@ -86,6 +76,7 @@ public class MainActivity extends AppCompatActivity {
             return;
         }
 
+        // 👇 PRIMA CONFIGURAZIONE
         startButton.setOnClickListener(v -> {
 
             int delay = Integer.parseInt(delaySpinner.getSelectedItem().toString());
@@ -99,6 +90,7 @@ public class MainActivity extends AppCompatActivity {
 
             hideSetupUI();
             circleContainer.setVisibility(FrameLayout.VISIBLE);
+            startBreathingAnimation(circleContainer);
 
             new CountDownTimer(delay * 1000L, 100) {
 
@@ -123,6 +115,30 @@ public class MainActivity extends AppCompatActivity {
             prefs.edit().clear().commit();
             recreate();
         });
+    }
+
+    private void startBreathingAnimation(FrameLayout circleContainer) {
+
+        circleContainer.setScaleX(0.95f);
+        circleContainer.setScaleY(0.95f);
+
+        android.animation.ObjectAnimator scaleX =
+                android.animation.ObjectAnimator.ofFloat(circleContainer, "scaleX", 0.95f, 1.05f);
+
+        android.animation.ObjectAnimator scaleY =
+                android.animation.ObjectAnimator.ofFloat(circleContainer, "scaleY", 0.95f, 1.05f);
+
+        scaleX.setDuration(900);
+        scaleY.setDuration(900);
+
+        scaleX.setRepeatMode(android.animation.ValueAnimator.REVERSE);
+        scaleY.setRepeatMode(android.animation.ValueAnimator.REVERSE);
+
+        scaleX.setRepeatCount(android.animation.ValueAnimator.INFINITE);
+        scaleY.setRepeatCount(android.animation.ValueAnimator.INFINITE);
+
+        scaleX.start();
+        scaleY.start();
     }
 
     private void hideSetupUI() {
