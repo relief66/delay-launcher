@@ -1,22 +1,30 @@
 package com.example.delaylauncher;
 
+import android.animation.ObjectAnimator;
+import android.animation.ValueAnimator;
 import android.content.*;
 import android.content.pm.*;
+import android.media.MediaPlayer;
 import android.os.*;
+import android.view.*;
 import android.widget.*;
 import androidx.appcompat.app.AppCompatActivity;
 import java.util.*;
-import android.os.CountDownTimer;
 
 public class MainActivity extends AppCompatActivity {
 
     private Spinner delaySpinner, appSpinner;
-    private Button startButton, resetButton;
+    private Button startButton;
     private List<ResolveInfo> launchableApps;
     private static final String PREFS = "DelayPrefs";
 
-    private android.animation.ObjectAnimator scaleXAnim;
-    private android.animation.ObjectAnimator scaleYAnim;
+    private ObjectAnimator scaleXAnim, scaleYAnim;
+    private CountDownTimer timer;
+    private MediaPlayer player;
+
+    private FrameLayout circleContainer;
+    private ProgressBar circleProgress;
+    private TextView circleText;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -30,56 +38,29 @@ public class MainActivity extends AppCompatActivity {
         delaySpinner = findViewById(R.id.delaySpinner);
         appSpinner = findViewById(R.id.appSpinner);
         startButton = findViewById(R.id.startButton);
-        resetButton = findViewById(R.id.resetButton);
 
-        FrameLayout circleContainer = findViewById(R.id.circleContainer);
-        ProgressBar circleProgress = findViewById(R.id.circleProgress);
-        TextView circleText = findViewById(R.id.circleText);
+        circleContainer = findViewById(R.id.circleContainer);
+        circleProgress = findViewById(R.id.circleProgress);
+        circleText = findViewById(R.id.circleText);
 
-        circleContainer.setVisibility(FrameLayout.GONE);
+        circleContainer.setVisibility(View.GONE);
 
         loadLaunchableApps();
         setupSpinners();
 
-        // 🚀 AVVIO AUTOMATICO
+        // TAP = interrompe countdown
+        circleContainer.setOnTouchListener((v, e) -> {
+            stopAll();
+            showSetupUI();
+            return true;
+        });
+
         if (isConfigured) {
-
             int savedDelay = prefs.getInt("delay", 20);
-            String savedPackage = prefs.getString("package", null);
-
-            hideSetupUI();
-            circleContainer.setVisibility(FrameLayout.VISIBLE);
-            startBreathingAnimation(circleContainer);
-
-            if (savedPackage != null) {
-
-                new Handler(Looper.getMainLooper()).postDelayed(() -> {
-
-                    new CountDownTimer(savedDelay * 1000L, 100) {
-
-                        public void onTick(long millisUntilFinished) {
-                            int progress = (int)((savedDelay * 1000L - millisUntilFinished) * 100 / (savedDelay * 1000L));
-                            circleProgress.setProgress(progress);
-
-                            int sec = (int)Math.ceil(millisUntilFinished / 1000.0);
-                            circleText.setText(String.valueOf(sec));
-                        }
-
-                        public void onFinish() {
-                            Intent intent = getPackageManager().getLaunchIntentForPackage(savedPackage);
-                            if (intent != null) startActivity(intent);
-                            finishAffinity();
-                        }
-
-                    }.start();
-
-                }, 200);
-            }
-
-            return;
+            String pkg = prefs.getString("package", null);
+            startCountdown(savedDelay, pkg);
         }
 
-        // 👇 PRIMA CONFIGURAZIONE
         startButton.setOnClickListener(v -> {
 
             int delay = Integer.parseInt(delaySpinner.getSelectedItem().toString());
@@ -91,61 +72,98 @@ public class MainActivity extends AppCompatActivity {
                     .putString("package", pkg)
                     .apply();
 
-            hideSetupUI();
-            circleContainer.setVisibility(FrameLayout.VISIBLE);
-            startBreathingAnimation(circleContainer);
-
-            new CountDownTimer(delay * 1000L, 100) {
-
-                public void onTick(long millisUntilFinished) {
-                    int progress = (int)((delay * 1000L - millisUntilFinished) * 100 / (delay * 1000L));
-                    circleProgress.setProgress(progress);
-
-                    int sec = (int)Math.ceil(millisUntilFinished / 1000.0);
-                    circleText.setText(String.valueOf(sec));
-                }
-
-                public void onFinish() {
-                    Intent intent = getPackageManager().getLaunchIntentForPackage(pkg);
-                    if (intent != null) startActivity(intent);
-                    finishAffinity();
-                }
-
-            }.start();
-        });
-
-        resetButton.setOnClickListener(v -> {
-            prefs.edit().clear().commit();
-            recreate();
+            startCountdown(delay, pkg);
         });
     }
 
-    private void startBreathingAnimation(FrameLayout circleContainer) {
+    private void startCountdown(int delay, String pkg) {
 
-        circleContainer.setScaleX(0.95f);
-        circleContainer.setScaleY(0.95f);
+        hideSetupUI();
+        circleContainer.setVisibility(View.VISIBLE);
+        startBreathingAnimation();
 
-        scaleXAnim = android.animation.ObjectAnimator.ofFloat(circleContainer, "scaleX", 0.95f, 1.05f);
-        scaleYAnim = android.animation.ObjectAnimator.ofFloat(circleContainer, "scaleY", 0.95f, 1.05f);
+        player = MediaPlayer.create(this, R.raw.tick);
+
+        timer = new CountDownTimer(delay * 1000L, 1000) {
+
+            public void onTick(long ms) {
+                int sec = (int)Math.ceil(ms / 1000.0);
+                circleText.setText(String.valueOf(sec));
+
+                int progress = (int)((delay * 1000L - ms) * 100 / (delay * 1000L));
+                circleProgress.setProgress(progress);
+
+                if (player != null) {
+                    try { player.start(); } catch (Exception ignored) {}
+                }
+            }
+
+            public void onFinish() {
+
+                stopAll();
+
+                // 🔥 CHIUSURA COMPLETA + LANCIO PULITO
+                new Handler(Looper.getMainLooper()).post(() -> {
+
+                    Intent intent = getPackageManager().getLaunchIntentForPackage(pkg);
+                    if (intent != null) {
+                        intent.addFlags(
+                                Intent.FLAG_ACTIVITY_NEW_TASK |
+                                Intent.FLAG_ACTIVITY_CLEAR_TASK |
+                                Intent.FLAG_ACTIVITY_CLEAR_TOP
+                        );
+                        startActivity(intent);
+                    }
+
+                    finishAffinity();
+                    System.exit(0); // elimina ogni residuo
+                });
+            }
+
+        }.start();
+    }
+
+    private void stopAll() {
+        if (timer != null) timer.cancel();
+
+        if (player != null) {
+            try { player.release(); } catch (Exception ignored) {}
+            player = null;
+        }
+
+        if (scaleXAnim != null) scaleXAnim.cancel();
+        if (scaleYAnim != null) scaleYAnim.cancel();
+    }
+
+    private void showSetupUI() {
+        delaySpinner.setVisibility(View.VISIBLE);
+        appSpinner.setVisibility(View.VISIBLE);
+        startButton.setVisibility(View.VISIBLE);
+        circleContainer.setVisibility(View.GONE);
+    }
+
+    private void hideSetupUI() {
+        delaySpinner.setVisibility(View.GONE);
+        appSpinner.setVisibility(View.GONE);
+        startButton.setVisibility(View.GONE);
+    }
+
+    private void startBreathingAnimation() {
+
+        scaleXAnim = ObjectAnimator.ofFloat(circleContainer, "scaleX", 0.95f, 1.05f);
+        scaleYAnim = ObjectAnimator.ofFloat(circleContainer, "scaleY", 0.95f, 1.05f);
 
         scaleXAnim.setDuration(900);
         scaleYAnim.setDuration(900);
 
-        scaleXAnim.setRepeatMode(android.animation.ValueAnimator.REVERSE);
-        scaleYAnim.setRepeatMode(android.animation.ValueAnimator.REVERSE);
+        scaleXAnim.setRepeatMode(ValueAnimator.REVERSE);
+        scaleYAnim.setRepeatMode(ValueAnimator.REVERSE);
 
-        scaleXAnim.setRepeatCount(android.animation.ValueAnimator.INFINITE);
-        scaleYAnim.setRepeatCount(android.animation.ValueAnimator.INFINITE);
+        scaleXAnim.setRepeatCount(ValueAnimator.INFINITE);
+        scaleYAnim.setRepeatCount(ValueAnimator.INFINITE);
 
         scaleXAnim.start();
         scaleYAnim.start();
-    }
-
-    private void hideSetupUI() {
-        delaySpinner.setVisibility(Spinner.GONE);
-        appSpinner.setVisibility(Spinner.GONE);
-        startButton.setVisibility(Button.GONE);
-        resetButton.setVisibility(Button.GONE);
     }
 
     private void loadLaunchableApps() {
@@ -178,8 +196,6 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
-
-        if (scaleXAnim != null) scaleXAnim.cancel();
-        if (scaleYAnim != null) scaleYAnim.cancel();
+        stopAll();
     }
 }
