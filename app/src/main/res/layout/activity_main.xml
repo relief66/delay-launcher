@@ -13,39 +13,46 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent">
 
+        <!-- TITOLONE STILE AUTO -->
         <TextView
             android:text="DELAY LAUNCHER"
-            android:textSize="36sp"
+            android:textSize="38sp"
             android:textStyle="bold"
-            android:textColor="#00E676"
-            android:layout_marginBottom="30dp"
+            android:letterSpacing="0.12"
+            android:textColor="#00E5FF"
+            android:shadowColor="#000000"
+            android:shadowRadius="10"
+            android:layout_marginBottom="40dp"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"/>
 
         <Spinner
             android:id="@+id/delaySpinner"
-            android:layout_width="300dp"
+            android:layout_width="320dp"
             android:layout_height="wrap_content"
             android:layout_marginBottom="16dp"/>
 
         <Spinner
             android:id="@+id/appSpinner"
-            android:layout_width="300dp"
+            android:layout_width="320dp"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="24dp"/>
+            android:layout_marginBottom="30dp"/>
 
         <Button
             android:id="@+id/startButton"
-            android:text="AVVIA"
+            android:text="START"
             android:textSize="20sp"
-            android:layout_width="300dp"
+            android:textColor="#000000"
+            android:backgroundTint="#00E5FF"
+            android:layout_width="320dp"
             android:layout_height="wrap_content"/>
 
+        <!-- CERCHIO PREMIUM -->
         <FrameLayout
             android:id="@+id/circleContainer"
-            android:layout_width="280dp"
-            android:layout_height="280dp"
-            android:layout_marginTop="30dp">
+            android:layout_width="300dp"
+            android:layout_height="300dp"
+            android:layout_marginTop="40dp">
 
             <ProgressBar
                 android:id="@+id/circleProgress"
@@ -59,9 +66,12 @@
             <TextView
                 android:id="@+id/circleText"
                 android:text="0"
-                android:textSize="56sp"
+                android:textSize="64sp"
                 android:textStyle="bold"
                 android:textColor="#FFFFFF"
+                android:shadowColor="#00E5FF"
+                android:shadowRadius="12"
+                android:letterSpacing="0.1"
                 android:layout_gravity="center"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"/>
