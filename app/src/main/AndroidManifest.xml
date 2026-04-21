@@ -8,19 +8,14 @@
 
         <activity
             android:name=".MainActivity"
-            android:exported="true"
-            android:launchMode="singleTask">
+            android:exported="true">
 
-           <intent-filter>
-                 <action android:name="android.intent.action.MAIN"/>
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN"/>
 
-                 <!-- visibile tra app -->
-                 <category android:name="android.intent.category.LAUNCHER"/>
-
-                 <!-- launcher -->
-                 <category android:name="android.intent.category.HOME"/>
-                 <category android:name="android.intent.category.DEFAULT"/>
-           </intent-filter>
+                <!-- SOLO LAUNCHER -->
+                <category android:name="android.intent.category.LAUNCHER"/>
+            </intent-filter>
 
         </activity>
 
