@@ -1,24 +1,24 @@
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <!-- SFONDO -->
+    <!-- sfondo -->
     <item>
         <shape android:shape="oval">
-            <solid android:color="#101820"/>
+            <solid android:color="#0A0A0A"/>
         </shape>
     </item>
 
-    <!-- CERCHIO ANIMATO -->
+    <!-- ring -->
     <item>
         <rotate android:fromDegrees="270" android:toDegrees="270">
             <shape
                 android:shape="ring"
                 android:useLevel="true"
-                android:thickness="14dp">
+                android:thickness="16dp">
 
                 <gradient
-                    android:startColor="#00E676"
-                    android:centerColor="#00C853"
-                    android:endColor="#00E676"
+                    android:startColor="#00E5FF"
+                    android:centerColor="#00B8D4"
+                    android:endColor="#00E5FF"
                     android:angle="0"/>
             </shape>
         </rotate>
