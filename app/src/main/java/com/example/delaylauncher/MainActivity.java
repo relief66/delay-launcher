@@ -4,10 +4,10 @@ import android.content.*;
 import android.content.pm.*;
 import android.os.*;
 import android.widget.*;
-import androidx.appcompat.app.AppCompatActivity;
+import android.app.Activity;
 import java.util.*;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends Activity {
 
 Spinner delaySpinner,appSpinner;
 Button startButton;
