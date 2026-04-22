@@ -38,6 +38,7 @@ android:layout_marginTop="26dp"/>
 
 <FrameLayout
 android:id="@+id/circleContainer"
+android:visibility="gone"
 android:layout_width="240dp"
 android:layout_height="240dp"
 android:layout_marginTop="42dp">
