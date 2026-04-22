@@ -5,6 +5,7 @@
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
         android:label="Delay Launcher"
+        android:roundIcon="@mipmap/ic_launcher"
         android:theme="@android:style/Theme.Black.NoTitleBar.Fullscreen">
 
         <activity
