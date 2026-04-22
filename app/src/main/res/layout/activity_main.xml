@@ -4,44 +4,43 @@
 xmlns:android="http://schemas.android.com/apk/res/android"
 android:layout_width="match_parent"
 android:layout_height="match_parent"
-android:background="#000000"
+android:orientation="vertical"
 android:gravity="center"
-android:orientation="vertical">
+android:background="#000814"
+android:padding="24dp">
 
 <TextView
-android:id="@+id/debugText"
 android:layout_width="wrap_content"
 android:layout_height="wrap_content"
-android:text="SAFE MODE BOOT"
-android:textColor="#00FFFF"
-android:textSize="30sp"
-android:textStyle="bold"/>
+android:text="DELAY LAUNCHER"
+android:textColor="#00D9FF"
+android:textSize="32sp"
+android:textStyle="bold"
+android:layout_marginBottom="30dp"/>
 
 <Spinner
 android:id="@+id/delaySpinner"
-android:layout_width="250dp"
-android:layout_height="wrap_content"
-android:layout_marginTop="30dp"/>
+android:layout_width="280dp"
+android:layout_height="wrap_content"/>
 
 <Spinner
 android:id="@+id/appSpinner"
-android:layout_width="250dp"
+android:layout_width="280dp"
 android:layout_height="wrap_content"
-android:layout_marginTop="20dp"/>
+android:layout_marginTop="18dp"/>
 
 <Button
 android:id="@+id/startButton"
 android:text="START"
-android:layout_width="250dp"
+android:layout_width="280dp"
 android:layout_height="wrap_content"
-android:layout_marginTop="30dp"/>
+android:layout_marginTop="26dp"/>
 
 <FrameLayout
 android:id="@+id/circleContainer"
-android:visibility="gone"
 android:layout_width="240dp"
 android:layout_height="240dp"
-android:layout_marginTop="40dp">
+android:layout_marginTop="42dp">
 
 <ProgressBar
 android:id="@+id/circleProgress"
@@ -57,7 +56,8 @@ android:layout_height="wrap_content"
 android:layout_gravity="center"
 android:text="0"
 android:textColor="#FFFFFF"
-android:textSize="56sp"/>
+android:textSize="58sp"
+android:textStyle="bold"/>
 
 </FrameLayout>
 
