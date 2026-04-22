@@ -1,10 +1,10 @@
 package com.example.delaylauncher;
 
+import android.app.Activity;
 import android.content.*;
 import android.content.pm.*;
 import android.os.*;
 import android.widget.*;
-import android.app.Activity;
 import java.util.*;
 
 public class MainActivity extends Activity {
