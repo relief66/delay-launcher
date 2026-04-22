@@ -1,169 +1,100 @@
 package com.example.delaylauncher;
 
-import android.animation.ObjectAnimator;
-import android.animation.ValueAnimator;
 import android.content.*;
 import android.content.pm.*;
-import android.media.ToneGenerator;
-import android.media.AudioManager;
 import android.os.*;
-import android.view.*;
 import android.widget.*;
 import androidx.appcompat.app.AppCompatActivity;
 import java.util.*;
 
 public class MainActivity extends AppCompatActivity {
 
-    private Spinner delaySpinner, appSpinner;
-    private Button startButton;
-    private List<ResolveInfo> launchableApps;
-    private static final String PREFS = "DelayPrefs";
+Spinner delaySpinner,appSpinner;
+Button startButton;
+List<ResolveInfo> launchableApps;
 
-    private CountDownTimer timer;
-    private ToneGenerator tone;
+@Override
+protected void onCreate(Bundle savedInstanceState) {
 
-    private FrameLayout circleContainer;
-    private ProgressBar circleProgress;
-    private TextView circleText;
+super.onCreate(savedInstanceState);
 
-    @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
+try {
 
-        setContentView(R.layout.activity_main);
+setContentView(R.layout.activity_main);
 
-        delaySpinner = findViewById(R.id.delaySpinner);
-        appSpinner = findViewById(R.id.appSpinner);
-        startButton = findViewById(R.id.startButton);
+delaySpinner=findViewById(R.id.delaySpinner);
+appSpinner=findViewById(R.id.appSpinner);
+startButton=findViewById(R.id.startButton);
 
-        circleContainer = findViewById(R.id.circleContainer);
-        circleProgress = findViewById(R.id.circleProgress);
-        circleText = findViewById(R.id.circleText);
+loadApps();
+setupSpinners();
 
-        circleContainer.setVisibility(View.GONE);
+Toast.makeText(
+this,
+"SAFE MODE STARTED",
+Toast.LENGTH_LONG
+).show();
 
-        loadLaunchableApps();
-        setupSpinners();
+}
+catch(Exception e){
 
-        tone = new ToneGenerator(AudioManager.STREAM_NOTIFICATION, 60);
+TextView t=new TextView(this);
+t.setText(e.toString());
+t.setTextSize(20);
+setContentView(t);
 
-        SharedPreferences prefs = getSharedPreferences(PREFS, MODE_PRIVATE);
-        boolean isConfigured = prefs.getBoolean("configured", false);
+}
+}
 
-        // 🔥 FIX CRITICO → delay di stabilizzazione Activity
-        new Handler(Looper.getMainLooper()).postDelayed(() -> {
+private void loadApps(){
 
-            if (isConfigured) {
-                int savedDelay = prefs.getInt("delay", 20);
-                String pkg = prefs.getString("package", null);
-                startCountdown(savedDelay, pkg);
-            }
+Intent i=new Intent(Intent.ACTION_MAIN,null);
+i.addCategory(Intent.CATEGORY_LAUNCHER);
 
-        }, 500); // 👈 fondamentale
+launchableApps=
+getPackageManager().queryIntentActivities(i,0);
 
-        startButton.setOnClickListener(v -> {
+}
 
-            int delay = Integer.parseInt(delaySpinner.getSelectedItem().toString());
-            String pkg = launchableApps.get(appSpinner.getSelectedItemPosition()).activityInfo.packageName;
+private void setupSpinners(){
 
-            prefs.edit()
-                    .putBoolean("configured", true)
-                    .putInt("delay", delay)
-                    .putString("package", pkg)
-                    .apply();
+String[] delays={
+"10","15","20","30","45","60"
+};
 
-            startCountdown(delay, pkg);
-        });
+ArrayAdapter<String> da=
+new ArrayAdapter<>(
+this,
+android.R.layout.simple_spinner_item,
+delays
+);
 
-        circleContainer.setOnTouchListener((v, e) -> {
-            stopAll();
-            showSetupUI();
-            return true;
-        });
-    }
+da.setDropDownViewResource(
+android.R.layout.simple_spinner_dropdown_item
+);
 
-    private void startCountdown(int delay, String pkg) {
+delaySpinner.setAdapter(da);
 
-        hideSetupUI();
-        circleContainer.setVisibility(View.VISIBLE);
+List<String> names=new ArrayList<>();
 
-        timer = new CountDownTimer(delay * 1000L, 1000) {
+for(ResolveInfo r:launchableApps){
+names.add(
+r.loadLabel(getPackageManager()).toString()
+);
+}
 
-            public void onTick(long ms) {
-                int sec = (int)Math.ceil(ms / 1000.0);
-                circleText.setText(String.valueOf(sec));
+ArrayAdapter<String> aa=
+new ArrayAdapter<>(
+this,
+android.R.layout.simple_spinner_item,
+names
+);
 
-                int progress = (int)((delay * 1000L - ms) * 100 / (delay * 1000L));
-                circleProgress.setProgress(progress);
+aa.setDropDownViewResource(
+android.R.layout.simple_spinner_dropdown_item
+);
 
-                if (tone != null) {
-                    tone.startTone(ToneGenerator.TONE_PROP_BEEP, 100);
-                }
-            }
+appSpinner.setAdapter(aa);
 
-            public void onFinish() {
-
-                stopAll();
-
-                Intent intent = getPackageManager().getLaunchIntentForPackage(pkg);
-                if (intent != null) {
-                    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                    startActivity(intent);
-                }
-
-                finish();
-            }
-
-        }.start();
-    }
-
-    private void stopAll() {
-        if (timer != null) timer.cancel();
-    }
-
-    private void showSetupUI() {
-        delaySpinner.setVisibility(View.VISIBLE);
-        appSpinner.setVisibility(View.VISIBLE);
-        startButton.setVisibility(View.VISIBLE);
-        circleContainer.setVisibility(View.GONE);
-    }
-
-    private void hideSetupUI() {
-        delaySpinner.setVisibility(View.GONE);
-        appSpinner.setVisibility(View.GONE);
-        startButton.setVisibility(View.GONE);
-    }
-
-    private void loadLaunchableApps() {
-        Intent intent = new Intent(Intent.ACTION_MAIN, null);
-        intent.addCategory(Intent.CATEGORY_LAUNCHER);
-        launchableApps = getPackageManager().queryIntentActivities(intent, 0);
-    }
-
-    private void setupSpinners() {
-
-        String[] delays = {"10","15","20","25","30","35","40","45","50","55","60"};
-
-        ArrayAdapter<String> delayAdapter =
-                new ArrayAdapter<>(this, R.layout.spinner_item, delays);
-        delayAdapter.setDropDownViewResource(R.layout.spinner_dropdown_item);
-        delaySpinner.setAdapter(delayAdapter);
-        delaySpinner.setSelection(2);
-
-        List<String> names = new ArrayList<>();
-        for (ResolveInfo app : launchableApps) {
-            names.add(app.loadLabel(getPackageManager()).toString());
-        }
-
-        ArrayAdapter<String> appAdapter =
-                new ArrayAdapter<>(this, R.layout.spinner_item, names);
-        appAdapter.setDropDownViewResource(R.layout.spinner_dropdown_item);
-        appSpinner.setAdapter(appAdapter);
-    }
-
-    @Override
-    protected void onDestroy() {
-        super.onDestroy();
-        if (tone != null) tone.release();
-    }
+}
 }
