@@ -83,9 +83,6 @@ p.edit()
 .putString("package",pkg)
 .apply();
 
-launchOptional(preApp1Spinner);
-launchOptional(preApp2Spinner);
-
 startCountdown(delay,pkg);
 
 });
@@ -114,7 +111,10 @@ Intent i=
 getPackageManager()
 .getLaunchIntentForPackage(pkg);
 
-if(i!=null) startActivity(i);
+if(i!=null){
+i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+startActivity(i);
+}
 
 }
 
@@ -148,15 +148,20 @@ circleProgress.setProgress(p);
 
 public void onFinish(){
 
+launchOptional(preApp1Spinner);
+launchOptional(preApp2Spinner);
+
 Intent i=
 getPackageManager()
 .getLaunchIntentForPackage(pkg);
 
 if(i!=null){
+
 i.addFlags(
 Intent.FLAG_ACTIVITY_NEW_TASK |
 Intent.FLAG_ACTIVITY_CLEAR_TASK
 );
+
 startActivity(i);
 }
 
