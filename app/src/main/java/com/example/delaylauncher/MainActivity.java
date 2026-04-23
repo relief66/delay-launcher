@@ -51,6 +51,14 @@ setupSpinners();
 SharedPreferences p=
 getSharedPreferences(PREFS,MODE_PRIVATE);
 
+preApp1Spinner.setSelection(
+p.getInt("pre1",0)
+);
+
+preApp2Spinner.setSelection(
+p.getInt("pre2",0)
+);
+
 if(p.getBoolean("configured",false)){
 
 String savedPkg=
@@ -81,6 +89,14 @@ p.edit()
 .putBoolean("configured",true)
 .putInt("delay",delay)
 .putString("package",pkg)
+.putInt(
+"pre1",
+preApp1Spinner.getSelectedItemPosition()
+)
+.putInt(
+"pre2",
+preApp2Spinner.getSelectedItemPosition()
+)
 .apply();
 
 startCountdown(delay,pkg);
@@ -151,7 +167,9 @@ public void onFinish(){
 launchOptional(preApp1Spinner);
 launchOptional(preApp2Spinner);
 
-new Handler().postDelayed(()->{
+new Handler(
+Looper.getMainLooper()
+).postDelayed(()->{
 
 Intent i=
 getPackageManager()
