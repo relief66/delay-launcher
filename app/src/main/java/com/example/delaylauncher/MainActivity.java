@@ -13,230 +13,275 @@ import java.util.List;
 
 public class MainActivity extends Activity {
 
-private Spinner delaySpinner;
-private Spinner appSpinner;
-private Button startButton;
+    private Spinner delaySpinner;
+    private Spinner appSpinner;
+    private Button startButton;
 
-private FrameLayout rootLayout;
-private FrameLayout circleContainer;
-private ProgressBar circleProgress;
-private TextView circleText;
+    private FrameLayout circleContainer;
+    private ProgressBar circleProgress;
+    private TextView circleText;
 
-private List<ResolveInfo> launchableApps;
+    private List<ResolveInfo> launchableApps;
 
-private CountDownTimer timer;
+    private CountDownTimer timer;
 
-static final String PREFS="DelayPrefs";
+    static final String PREFS="DelayPrefs";
 
-@Override
-protected void onCreate(Bundle b){
-super.onCreate(b);
+    @Override
+    protected void onCreate(Bundle b){
+        super.onCreate(b);
 
-setContentView(R.layout.activity_main);
+        setContentView(R.layout.activity_main);
 
-rootLayout=findViewById(R.id.rootLayout);
-delaySpinner=findViewById(R.id.delaySpinner);
-appSpinner=findViewById(R.id.appSpinner);
-startButton=findViewById(R.id.startButton);
+        delaySpinner=findViewById(R.id.delaySpinner);
+        appSpinner=findViewById(R.id.appSpinner);
+        startButton=findViewById(R.id.startButton);
 
-circleContainer=findViewById(R.id.circleContainer);
-circleProgress=findViewById(R.id.circleProgress);
-circleText=findViewById(R.id.circleText);
+        circleContainer=findViewById(R.id.circleContainer);
+        circleProgress=findViewById(R.id.circleProgress);
+        circleText=findViewById(R.id.circleText);
 
-loadLaunchers();
-setupSpinners();
+        loadLaunchers();
+        setupSpinners();
 
-SharedPreferences p=
-getSharedPreferences(PREFS,MODE_PRIVATE);
+        SharedPreferences p=
+                getSharedPreferences(PREFS,MODE_PRIVATE);
 
-if(p.getBoolean("configured",false)){
+        if(p.getBoolean("configured",false)){
 
-startCountdown(
-p.getInt("delay",20),
-p.getString("package",null)
-);
+            String pkg=
+                    p.getString("package",null);
 
-}
+            if(pkg!=null){
+                startCountdown(
+                        p.getInt("delay",20),
+                        pkg
+                );
+            }
+        }
 
-startButton.setOnClickListener(v->{
+        startButton.setOnClickListener(v->{
 
-int delay=Integer.parseInt(
-delaySpinner.getSelectedItem().toString()
-);
+            int delay=
+                    Integer.parseInt(
+                            delaySpinner
+                                    .getSelectedItem()
+                                    .toString()
+                    );
 
-String pkg=
-launchableApps.get(
-appSpinner.getSelectedItemPosition()
-).activityInfo.packageName;
+            String pkg=
+                    launchableApps
+                            .get(
+                                    appSpinner.getSelectedItemPosition()
+                            )
+                            .activityInfo.packageName;
 
-p.edit()
-.putBoolean("configured",true)
-.putInt("delay",delay)
-.putString("package",pkg)
-.apply();
+            p.edit()
+                    .putBoolean("configured",true)
+                    .putInt("delay",delay)
+                    .putString("package",pkg)
+                    .apply();
 
-startCountdown(delay,pkg);
+            startCountdown(
+                    delay,
+                    pkg
+            );
 
-});
+        });
 
-rootLayout.setOnTouchListener(
-(v,e)->{
+        // tap sul countdown per interrompere
+        circleContainer.setOnTouchListener(
+                (v,e)->{
 
-if(e.getAction()==MotionEvent.ACTION_DOWN){
+                    if(e.getAction()== MotionEvent.ACTION_DOWN){
 
-if(timer!=null) timer.cancel();
+                        if(timer!=null){
+                            timer.cancel();
+                        }
 
-showSetup();
+                        showSetup();
+                    }
 
-}
+                    return true;
+                }
+        );
+    }
 
-return true;
-});
+    private void startCountdown(
+            int delay,
+            String pkg
+    ){
 
-}
+        hideSetup();
 
-private void startCountdown(
-int delay,
-String pkg
-){
+        circleContainer.setVisibility(
+                View.VISIBLE
+        );
 
-hideSetup();
+        if(timer!=null){
+            timer.cancel();
+        }
 
-circleContainer.setVisibility(View.VISIBLE);
+        timer=
+                new CountDownTimer(
+                        delay*1000L,
+                        100
+                ){
 
-timer=
-new CountDownTimer(delay*1000L,100){
+                    public void onTick(long ms){
 
-public void onTick(long ms){
+                        int sec=
+                                (int)Math.ceil(
+                                        ms/1000.0
+                                );
 
-int sec=
-(int)Math.ceil(ms/1000.0);
+                        circleText.setText(
+                                String.valueOf(sec)
+                        );
 
-circleText.setText(
-String.valueOf(sec)
-);
+                        int p=
+                                (int)(
+                                        (delay*1000L-ms)
+                                                *100
+                                                /(delay*1000L)
+                                );
 
-int p=
-(int)(
-(delay*1000L-ms)
-*100
-/(delay*1000L)
-);
+                        circleProgress.setProgress(p);
+                    }
 
-circleProgress.setProgress(p);
+                    public void onFinish(){
 
-}
+                        Intent i=
+                                getPackageManager()
+                                        .getLaunchIntentForPackage(
+                                                pkg
+                                        );
 
-public void onFinish(){
+                        if(i!=null){
 
-Intent i=
-getPackageManager()
-.getLaunchIntentForPackage(pkg);
+                            i.addFlags(
+                                    Intent.FLAG_ACTIVITY_NEW_TASK
+                                    |Intent.FLAG_ACTIVITY_CLEAR_TASK
+                            );
 
-if(i!=null){
+                            startActivity(i);
+                        }
 
-i.addFlags(
-Intent.FLAG_ACTIVITY_NEW_TASK
-|Intent.FLAG_ACTIVITY_CLEAR_TASK
-);
+                        finishAffinity();
 
-startActivity(i);
+                        Process.killProcess(
+                                Process.myPid()
+                        );
+                    }
 
-}
+                }.start();
 
-finishAffinity();
-Process.killProcess(
-Process.myPid()
-);
+    }
 
-}
+    private void hideSetup(){
 
-}.start();
+        delaySpinner.setVisibility(
+                View.GONE
+        );
 
-}
+        appSpinner.setVisibility(
+                View.GONE
+        );
 
-private void hideSetup(){
+        startButton.setVisibility(
+                View.GONE
+        );
 
-delaySpinner.setVisibility(View.GONE);
-appSpinner.setVisibility(View.GONE);
-startButton.setVisibility(View.GONE);
+    }
 
-}
+    private void showSetup(){
 
-private void showSetup(){
+        circleContainer.setVisibility(
+                View.GONE
+        );
 
-circleContainer.setVisibility(View.GONE);
+        delaySpinner.setVisibility(
+                View.VISIBLE
+        );
 
-delaySpinner.setVisibility(View.VISIBLE);
-appSpinner.setVisibility(View.VISIBLE);
-startButton.setVisibility(View.VISIBLE);
+        appSpinner.setVisibility(
+                View.VISIBLE
+        );
 
-}
+        startButton.setVisibility(
+                View.VISIBLE
+        );
 
-private void loadLaunchers(){
+    }
 
-Intent i=
-new Intent(
-Intent.ACTION_MAIN,
-null
-);
+    private void loadLaunchers(){
 
-i.addCategory(
-Intent.CATEGORY_HOME
-);
+        Intent i=
+                new Intent(
+                        Intent.ACTION_MAIN,
+                        null
+                );
 
-launchableApps=
-getPackageManager()
-.queryIntentActivities(i,0);
+        // FIX corretto:
+        i.addCategory(
+                Intent.CATEGORY_LAUNCHER
+        );
 
-}
+        launchableApps=
+                getPackageManager()
+                        .queryIntentActivities(
+                                i,
+                                0
+                        );
+    }
 
-private void setupSpinners(){
+    private void setupSpinners(){
 
-String[] delays={
-"10","15","20","25",
-"30","35","40","45",
-"50","55","60"
-};
+        String[] delays={
+                "10","15","20","25",
+                "30","35","40","45",
+                "50","55","60"
+        };
 
-ArrayAdapter<String> d=
-new ArrayAdapter<>(
-this,
-android.R.layout.simple_spinner_item,
-delays
-);
+        ArrayAdapter<String> d=
+                new ArrayAdapter<>(
+                        this,
+                        android.R.layout.simple_spinner_item,
+                        delays
+                );
 
-d.setDropDownViewResource(
-android.R.layout.simple_spinner_dropdown_item
-);
+        d.setDropDownViewResource(
+                android.R.layout.simple_spinner_dropdown_item
+        );
 
-delaySpinner.setAdapter(d);
-delaySpinner.setSelection(2);
+        delaySpinner.setAdapter(d);
+        delaySpinner.setSelection(2);
 
-List<String> names=
-new ArrayList<>();
+        List<String> names=
+                new ArrayList<>();
 
-for(ResolveInfo r:launchableApps){
-names.add(
-r.loadLabel(
-getPackageManager()
-).toString()
-);
-}
+        for(ResolveInfo r:launchableApps){
 
-ArrayAdapter<String> a=
-new ArrayAdapter<>(
-this,
-android.R.layout.simple_spinner_item,
-names
-);
+            names.add(
+                    r.loadLabel(
+                            getPackageManager()
+                    ).toString()
+            );
+        }
 
-a.setDropDownViewResource(
-android.R.layout.simple_spinner_dropdown_item
-);
+        ArrayAdapter<String> a=
+                new ArrayAdapter<>(
+                        this,
+                        android.R.layout.simple_spinner_item,
+                        names
+                );
 
-appSpinner.setAdapter(a);
+        a.setDropDownViewResource(
+                android.R.layout.simple_spinner_dropdown_item
+        );
 
-}
+        appSpinner.setAdapter(a);
+
+    }
 
 }
