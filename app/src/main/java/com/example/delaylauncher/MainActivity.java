@@ -48,18 +48,27 @@ circleContainer.setVisibility(View.GONE);
 loadLaunchers();
 setupSpinners();
 
-SharedPreferences p=getSharedPreferences(PREFS,MODE_PRIVATE);
+SharedPreferences p=
+getSharedPreferences(PREFS,MODE_PRIVATE);
 
 if(p.getBoolean("configured",false)){
+
+String savedPkg=
+p.getString("package",null);
+
+if(savedPkg!=null){
 startCountdown(
 p.getInt("delay",20),
-p.getString("package",null)
+savedPkg
 );
+}
+
 }
 
 startButton.setOnClickListener(v->{
 
-int delay=Integer.parseInt(
+int delay=
+Integer.parseInt(
 delaySpinner.getSelectedItem().toString()
 );
 
@@ -88,10 +97,13 @@ showSetup();
 }
 return true;
 });
+
 }
 
 private void launchOptional(Spinner s){
+
 int pos=s.getSelectedItemPosition();
+
 if(pos<=0) return;
 
 String pkg=
@@ -103,6 +115,7 @@ getPackageManager()
 .getLaunchIntentForPackage(pkg);
 
 if(i!=null) startActivity(i);
+
 }
 
 private void startCountdown(int d,String pkg){
@@ -118,7 +131,8 @@ new CountDownTimer(d*1000L,100){
 
 public void onTick(long ms){
 
-int sec=(int)Math.ceil(ms/1000.0);
+int sec=
+(int)Math.ceil(ms/1000.0);
 
 circleText.setText(
 String.valueOf(sec)
@@ -129,6 +143,7 @@ int p=(int)(
 );
 
 circleProgress.setProgress(p);
+
 }
 
 public void onFinish(){
@@ -199,6 +214,7 @@ if(!r.activityInfo.packageName.equals(mine)){
 launchers.add(r);
 }
 }
+
 }
 
 private void setupSpinners(){
