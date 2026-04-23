@@ -151,6 +151,8 @@ public void onFinish(){
 launchOptional(preApp1Spinner);
 launchOptional(preApp2Spinner);
 
+new Handler().postDelayed(()->{
+
 Intent i=
 getPackageManager()
 .getLaunchIntentForPackage(pkg);
@@ -163,6 +165,7 @@ Intent.FLAG_ACTIVITY_CLEAR_TASK
 );
 
 startActivity(i);
+
 }
 
 finishAffinity();
@@ -170,6 +173,8 @@ finishAffinity();
 android.os.Process.killProcess(
 android.os.Process.myPid()
 );
+
+},1500);
 
 }
 
