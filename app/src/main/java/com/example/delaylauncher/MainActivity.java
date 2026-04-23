@@ -61,14 +61,21 @@ p.getInt("pre2",0)
 
 if(p.getBoolean("configured",false)){
 
+int savedDelay=
+p.getInt("delay",10);
+
+if(savedDelay>0){
+
 String savedPkg=
 p.getString("package",null);
 
 if(savedPkg!=null){
 startCountdown(
-p.getInt("delay",20),
+savedDelay,
 savedPkg
 );
+}
+
 }
 
 }
@@ -80,24 +87,40 @@ Integer.parseInt(
 delaySpinner.getSelectedItem().toString()
 );
 
-String pkg=
+boolean zeroDelay=(delay==0);
+
+String pkg=null;
+
+if(!zeroDelay){
+
+pkg=
 launchers.get(
 appSpinner.getSelectedItemPosition()
 ).activityInfo.packageName;
 
-p.edit()
-.putBoolean("configured",true)
-.putInt("delay",delay)
-.putString("package",pkg)
-.putInt(
+}
+
+SharedPreferences.Editor e=
+p.edit();
+
+e.putBoolean("configured",true);
+e.putInt("delay",delay);
+
+if(pkg!=null){
+e.putString("package",pkg);
+}
+
+e.putInt(
 "pre1",
 preApp1Spinner.getSelectedItemPosition()
-)
-.putInt(
+);
+
+e.putInt(
 "pre2",
 preApp2Spinner.getSelectedItemPosition()
-)
-.apply();
+);
+
+e.apply();
 
 startCountdown(delay,pkg);
 
@@ -126,9 +149,7 @@ String pkg=
 launchers.get(pos-1)
 .activityInfo.packageName;
 
-if(launched.contains(pkg)){
-return;
-}
+if(launched.contains(pkg)) return;
 
 launched.add(pkg);
 
@@ -152,7 +173,10 @@ circleContainer.setVisibility(View.VISIBLE);
 if(timer!=null) timer.cancel();
 
 timer=
-new CountDownTimer(d*1000L,100){
+new CountDownTimer(
+Math.max(d,1)*1000L,
+100
+){
 
 public void onTick(long ms){
 
@@ -164,7 +188,9 @@ String.valueOf(sec)
 );
 
 int p=(int)(
-((d*1000L-ms)*100)/(d*1000L)
+((Math.max(d,1)*1000L-ms)*100)
+/
+(Math.max(d,1)*1000L)
 );
 
 circleProgress.setProgress(p);
@@ -185,6 +211,24 @@ launchOptional(
 preApp2Spinner,
 launched
 );
+
+if(d==0){
+
+finishAffinity();
+
+new Handler(
+Looper.getMainLooper()
+).postDelayed(()->{
+
+android.os.Process.killProcess(
+android.os.Process.myPid()
+);
+
+},1000);
+
+return;
+
+}
 
 new Handler(
 Looper.getMainLooper()
@@ -240,10 +284,16 @@ private void showSetup(){
 circleContainer.setVisibility(View.GONE);
 
 delaySpinner.setVisibility(View.VISIBLE);
-appSpinner.setVisibility(View.VISIBLE);
 preApp1Spinner.setVisibility(View.VISIBLE);
 preApp2Spinner.setVisibility(View.VISIBLE);
 startButton.setVisibility(View.VISIBLE);
+
+if(delaySpinner.getSelectedItemPosition()==0){
+appSpinner.setVisibility(View.GONE);
+}
+else{
+appSpinner.setVisibility(View.VISIBLE);
+}
 
 }
 
@@ -273,8 +323,8 @@ launchers.add(r);
 private void setupSpinners(){
 
 String[] delays={
-"0","5","10","15","20","25","30",
-"35","40","45","50","55","60"
+"0","5","10","15","20","25",
+"30","35","40","45","50","55","60"
 };
 
 delaySpinner.setAdapter(
@@ -286,6 +336,37 @@ delays
 );
 
 delaySpinner.setSelection(2);
+
+delaySpinner.setOnItemSelectedListener(
+new AdapterView.OnItemSelectedListener(){
+
+@Override
+public void onItemSelected(
+AdapterView<?> p,
+View v,
+int pos,
+long id
+){
+
+if(pos==0){
+appSpinner.setVisibility(
+View.GONE
+);
+}
+else{
+appSpinner.setVisibility(
+View.VISIBLE
+);
+}
+
+}
+
+@Override
+public void onNothingSelected(
+AdapterView<?> p
+){}
+
+});
 
 List<String> names=
 new ArrayList<>();
