@@ -1,250 +1,259 @@
 package com.example.delaylauncher;
 
 import android.app.Activity;
-import android.content.Intent;
-import android.content.SharedPreferences;
+import android.content.*;
 import android.content.pm.ResolveInfo;
-import android.os.Bundle;
-import android.os.CountDownTimer;
+import android.os.*;
 import android.view.MotionEvent;
 import android.view.View;
-import android.widget.ArrayAdapter;
-import android.widget.Button;
-import android.widget.FrameLayout;
-import android.widget.ProgressBar;
-import android.widget.Spinner;
-import android.widget.TextView;
+import android.widget.*;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
 public class MainActivity extends Activity {
 
-    private static final String PREFS="DelayPrefs";
+private static final String PREFS="DelayPrefs";
 
-    private Spinner delaySpinner;
-    private Spinner appSpinner;
-    private Button startButton;
+Spinner delaySpinner;
+Spinner appSpinner;
+Spinner preApp1Spinner;
+Spinner preApp2Spinner;
+Button startButton;
 
-    private FrameLayout circleContainer;
-    private ProgressBar circleProgress;
-    private TextView circleText;
+FrameLayout circleContainer;
+ProgressBar circleProgress;
+TextView circleText;
 
-    private List<ResolveInfo> launchableApps;
-    private CountDownTimer timer;
+List<ResolveInfo> launchers;
+CountDownTimer timer;
 
-    @Override
-    protected void onCreate(Bundle savedInstanceState){
-        super.onCreate(savedInstanceState);
+@Override
+protected void onCreate(Bundle b){
+super.onCreate(b);
 
-        setContentView(R.layout.activity_main);
+setContentView(R.layout.activity_main);
 
-        delaySpinner=findViewById(R.id.delaySpinner);
-        appSpinner=findViewById(R.id.appSpinner);
-        startButton=findViewById(R.id.startButton);
+delaySpinner=findViewById(R.id.delaySpinner);
+appSpinner=findViewById(R.id.appSpinner);
+preApp1Spinner=findViewById(R.id.preApp1Spinner);
+preApp2Spinner=findViewById(R.id.preApp2Spinner);
+startButton=findViewById(R.id.startButton);
 
-        circleContainer=findViewById(R.id.circleContainer);
-        circleProgress=findViewById(R.id.circleProgress);
-        circleText=findViewById(R.id.circleText);
+circleContainer=findViewById(R.id.circleContainer);
+circleProgress=findViewById(R.id.circleProgress);
+circleText=findViewById(R.id.circleText);
 
-        circleContainer.setVisibility(View.GONE);
+circleContainer.setVisibility(View.GONE);
 
-        loadLaunchers();
-        setupSpinners();
+loadLaunchers();
+setupSpinners();
 
-        SharedPreferences prefs=
-            getSharedPreferences(PREFS,MODE_PRIVATE);
+SharedPreferences p=getSharedPreferences(PREFS,MODE_PRIVATE);
 
-        if(prefs.getBoolean("configured",false)){
+if(p.getBoolean("configured",false)){
+startCountdown(
+p.getInt("delay",20),
+p.getString("package",null)
+);
+}
 
-            String pkg=prefs.getString("package",null);
+startButton.setOnClickListener(v->{
 
-            if(pkg!=null){
-                startCountdown(
-                    prefs.getInt("delay",20),
-                    pkg
-                );
-            }
-        }
+int delay=Integer.parseInt(
+delaySpinner.getSelectedItem().toString()
+);
 
-        startButton.setOnClickListener(v->{
+String pkg=
+launchers.get(
+appSpinner.getSelectedItemPosition()
+).activityInfo.packageName;
 
-            int delay=Integer.parseInt(
-                delaySpinner.getSelectedItem().toString()
-            );
+p.edit()
+.putBoolean("configured",true)
+.putInt("delay",delay)
+.putString("package",pkg)
+.apply();
 
-            String pkg=
-                launchableApps
-                .get(appSpinner.getSelectedItemPosition())
-                .activityInfo.packageName;
+launchOptional(preApp1Spinner);
+launchOptional(preApp2Spinner);
 
-            prefs.edit()
-                .putBoolean("configured",true)
-                .putInt("delay",delay)
-                .putString("package",pkg)
-                .apply();
+startCountdown(delay,pkg);
 
-            startCountdown(delay,pkg);
-        });
+});
 
-        circleContainer.setOnTouchListener((v,e)->{
+circleContainer.setOnTouchListener((v,e)->{
+if(e.getAction()==MotionEvent.ACTION_DOWN){
+if(timer!=null) timer.cancel();
+showSetup();
+}
+return true;
+});
+}
 
-            if(e.getAction()== MotionEvent.ACTION_DOWN){
-                cancelCountdown();
-                showSetup();
-            }
+private void launchOptional(Spinner s){
+int pos=s.getSelectedItemPosition();
+if(pos<=0) return;
 
-            return true;
-        });
-    }
+String pkg=
+launchers.get(pos-1)
+.activityInfo.packageName;
 
-    private void startCountdown(int delay,String pkg){
+Intent i=
+getPackageManager()
+.getLaunchIntentForPackage(pkg);
 
-        hideSetup();
+if(i!=null) startActivity(i);
+}
 
-        circleContainer.setVisibility(View.VISIBLE);
+private void startCountdown(int d,String pkg){
 
-        cancelCountdown();
+hideSetup();
 
-        timer=
-        new CountDownTimer(delay*1000L,100){
+circleContainer.setVisibility(View.VISIBLE);
 
-            public void onTick(long ms){
+if(timer!=null) timer.cancel();
 
-                int sec=(int)Math.ceil(ms/1000.0);
+timer=
+new CountDownTimer(d*1000L,100){
 
-                circleText.setText(
-                    String.valueOf(sec)
-                );
+public void onTick(long ms){
 
-                int progress=(int)(
-                   ((delay*1000L)-ms)
-                   *100
-                   /(delay*1000L)
-                );
+int sec=(int)Math.ceil(ms/1000.0);
 
-                circleProgress.setProgress(progress);
-            }
+circleText.setText(
+String.valueOf(sec)
+);
 
-            public void onFinish(){
+int p=(int)(
+((d*1000L-ms)*100)/(d*1000L)
+);
 
-                Intent launch=
-                   getPackageManager()
-                   .getLaunchIntentForPackage(pkg);
+circleProgress.setProgress(p);
+}
 
-                if(launch!=null){
+public void onFinish(){
 
-                    launch.addFlags(
-                      Intent.FLAG_ACTIVITY_NEW_TASK |
-                      Intent.FLAG_ACTIVITY_CLEAR_TOP |
-                      Intent.FLAG_ACTIVITY_CLEAR_TASK
-                    );
+Intent i=
+getPackageManager()
+.getLaunchIntentForPackage(pkg);
 
-                    startActivity(launch);
-                }
+if(i!=null){
+i.addFlags(
+Intent.FLAG_ACTIVITY_NEW_TASK |
+Intent.FLAG_ACTIVITY_CLEAR_TASK
+);
+startActivity(i);
+}
 
-                finishAffinity();
+finishAffinity();
 
-                android.os.Process.killProcess(
-                    android.os.Process.myPid()
-                );
-            }
+android.os.Process.killProcess(
+android.os.Process.myPid()
+);
 
-        }.start();
-    }
+}
 
-    private void cancelCountdown(){
-        if(timer!=null){
-            timer.cancel();
-            timer=null;
-        }
-    }
+}.start();
 
-    private void hideSetup(){
+}
 
-        delaySpinner.setVisibility(View.GONE);
-        appSpinner.setVisibility(View.GONE);
-        startButton.setVisibility(View.GONE);
+private void hideSetup(){
 
-    }
+delaySpinner.setVisibility(View.GONE);
+appSpinner.setVisibility(View.GONE);
+preApp1Spinner.setVisibility(View.GONE);
+preApp2Spinner.setVisibility(View.GONE);
+startButton.setVisibility(View.GONE);
 
-    private void showSetup(){
+}
 
-        circleContainer.setVisibility(View.GONE);
+private void showSetup(){
 
-        delaySpinner.setVisibility(View.VISIBLE);
-        appSpinner.setVisibility(View.VISIBLE);
-        startButton.setVisibility(View.VISIBLE);
+circleContainer.setVisibility(View.GONE);
 
-    }
+delaySpinner.setVisibility(View.VISIBLE);
+appSpinner.setVisibility(View.VISIBLE);
+preApp1Spinner.setVisibility(View.VISIBLE);
+preApp2Spinner.setVisibility(View.VISIBLE);
+startButton.setVisibility(View.VISIBLE);
 
-    private void loadLaunchers(){
+}
 
-        Intent i=
-            new Intent(Intent.ACTION_MAIN,null);
+private void loadLaunchers(){
 
-        i.addCategory(Intent.CATEGORY_HOME);
+Intent i=
+new Intent(Intent.ACTION_MAIN,null);
 
-        List<ResolveInfo> raw=
-            getPackageManager()
-            .queryIntentActivities(i,0);
+i.addCategory(Intent.CATEGORY_HOME);
 
-        launchableApps=new ArrayList<>();
+List<ResolveInfo> raw=
+getPackageManager()
+.queryIntentActivities(i,0);
 
-        String myPkg=getPackageName();
+launchers=new ArrayList<>();
 
-        for(ResolveInfo r:raw){
+String mine=getPackageName();
 
-            if(!r.activityInfo.packageName.equals(myPkg)){
-                launchableApps.add(r);
-            }
-        }
-    }
+for(ResolveInfo r:raw){
+if(!r.activityInfo.packageName.equals(mine)){
+launchers.add(r);
+}
+}
+}
 
-    private void setupSpinners(){
+private void setupSpinners(){
 
-        String[] delays={
-         "10","15","20","25","30",
-         "35","40","45","50","55","60"
-        };
+String[] delays={
+"10","15","20","25","30",
+"35","40","45","50","55","60"
+};
 
-        ArrayAdapter<String> d=
-         new ArrayAdapter<>(
-            this,
-            android.R.layout.simple_spinner_item,
-            delays
-         );
+delaySpinner.setAdapter(
+new ArrayAdapter<>(
+this,
+android.R.layout.simple_spinner_dropdown_item,
+delays
+)
+);
 
-        d.setDropDownViewResource(
-          android.R.layout.simple_spinner_dropdown_item
-        );
+delaySpinner.setSelection(2);
 
-        delaySpinner.setAdapter(d);
-        delaySpinner.setSelection(2);
+List<String> names=
+new ArrayList<>();
 
-        List<String> names=
-           new ArrayList<>();
+for(ResolveInfo r:launchers){
+names.add(
+r.loadLabel(
+getPackageManager()
+).toString()
+);
+}
 
-        for(ResolveInfo r:launchableApps){
+ArrayAdapter<String> a=
+new ArrayAdapter<>(
+this,
+android.R.layout.simple_spinner_dropdown_item,
+names
+);
 
-            names.add(
-              r.loadLabel(
-                 getPackageManager()
-              ).toString()
-            );
-        }
+appSpinner.setAdapter(a);
 
-        ArrayAdapter<String> a=
-         new ArrayAdapter<>(
-           this,
-           android.R.layout.simple_spinner_item,
-           names
-         );
+List<String> optional=
+new ArrayList<>();
 
-        a.setDropDownViewResource(
-         android.R.layout.simple_spinner_dropdown_item
-        );
+optional.add("NONE");
+optional.addAll(names);
 
-        appSpinner.setAdapter(a);
-    }
+ArrayAdapter<String> o=
+new ArrayAdapter<>(
+this,
+android.R.layout.simple_spinner_dropdown_item,
+optional
+);
+
+preApp1Spinner.setAdapter(o);
+preApp2Spinner.setAdapter(o);
+
+}
+
 }
