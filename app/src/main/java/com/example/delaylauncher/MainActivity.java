@@ -169,8 +169,8 @@ public class MainActivity extends Activity {
 
                         finishAffinity();
 
-                        Process.killProcess(
-                                Process.myPid()
+                        android.os.Process.killProcess(
+                            android.os.Process.myPid()
                         );
                     }
 
