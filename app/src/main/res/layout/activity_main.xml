@@ -1,47 +1,64 @@
 <?xml version="1.0" encoding="utf-8"?>
 
-<LinearLayout
+<FrameLayout
 xmlns:android="http://schemas.android.com/apk/res/android"
+android:id="@+id/rootLayout"
 android:layout_width="match_parent"
 android:layout_height="match_parent"
-android:orientation="vertical"
+android:background="#050B18">
+
+<LinearLayout
+android:layout_width="match_parent"
+android:layout_height="match_parent"
 android:gravity="center"
-android:background="#000814"
-android:padding="24dp">
+android:orientation="vertical"
+android:padding="32dp">
 
 <TextView
 android:layout_width="wrap_content"
 android:layout_height="wrap_content"
 android:text="DELAY LAUNCHER"
-android:textColor="#00D9FF"
-android:textSize="32sp"
+android:textColor="#33D6FF"
 android:textStyle="bold"
+android:textSize="34sp"
+android:letterSpacing=".08"/>
+
+<TextView
+android:layout_width="wrap_content"
+android:layout_height="wrap_content"
+android:text="Automotive Launch Control"
+android:textColor="#88DFFF"
+android:textSize="16sp"
+android:layout_marginTop="8dp"
 android:layout_marginBottom="30dp"/>
 
 <Spinner
 android:id="@+id/delaySpinner"
-android:layout_width="280dp"
-android:layout_height="wrap_content"/>
+android:layout_width="300dp"
+android:layout_height="52dp"
+android:background="#FFFFFF"/>
 
 <Spinner
 android:id="@+id/appSpinner"
-android:layout_width="280dp"
-android:layout_height="wrap_content"
+android:layout_width="300dp"
+android:layout_height="52dp"
+android:background="#FFFFFF"
 android:layout_marginTop="18dp"/>
 
 <Button
 android:id="@+id/startButton"
+android:layout_width="300dp"
+android:layout_height="58dp"
 android:text="START"
-android:layout_width="280dp"
-android:layout_height="wrap_content"
-android:layout_marginTop="26dp"/>
+android:textSize="20sp"
+android:layout_marginTop="30dp"/>
 
 <FrameLayout
 android:id="@+id/circleContainer"
 android:visibility="gone"
-android:layout_width="240dp"
-android:layout_height="240dp"
-android:layout_marginTop="42dp">
+android:layout_width="260dp"
+android:layout_height="260dp"
+android:layout_marginTop="40dp">
 
 <ProgressBar
 android:id="@+id/circleProgress"
@@ -55,11 +72,13 @@ android:id="@+id/circleText"
 android:layout_width="wrap_content"
 android:layout_height="wrap_content"
 android:layout_gravity="center"
-android:text="0"
 android:textColor="#FFFFFF"
-android:textSize="58sp"
-android:textStyle="bold"/>
+android:textSize="72sp"
+android:textStyle="bold"
+android:text="0"/>
 
 </FrameLayout>
 
 </LinearLayout>
+
+</FrameLayout>
