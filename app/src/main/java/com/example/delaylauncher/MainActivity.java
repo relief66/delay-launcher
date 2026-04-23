@@ -113,7 +113,10 @@ return true;
 
 }
 
-private void launchOptional(Spinner s){
+private void launchOptional(
+Spinner s,
+Set<String> launched
+){
 
 int pos=s.getSelectedItemPosition();
 
@@ -122,6 +125,12 @@ if(pos<=0) return;
 String pkg=
 launchers.get(pos-1)
 .activityInfo.packageName;
+
+if(launched.contains(pkg)){
+return;
+}
+
+launched.add(pkg);
 
 Intent i=
 getPackageManager()
@@ -164,8 +173,18 @@ circleProgress.setProgress(p);
 
 public void onFinish(){
 
-launchOptional(preApp1Spinner);
-launchOptional(preApp2Spinner);
+Set<String> launched=
+new HashSet<>();
+
+launchOptional(
+preApp1Spinner,
+launched
+);
+
+launchOptional(
+preApp2Spinner,
+launched
+);
 
 new Handler(
 Looper.getMainLooper()
@@ -188,9 +207,15 @@ startActivity(i);
 
 finishAffinity();
 
+new Handler(
+Looper.getMainLooper()
+).postDelayed(()->{
+
 android.os.Process.killProcess(
 android.os.Process.myPid()
 );
+
+},1000);
 
 },1500);
 
