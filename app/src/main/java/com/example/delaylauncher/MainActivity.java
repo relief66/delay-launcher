@@ -27,6 +27,7 @@ public class MainActivity extends Activity {
     private View countdownOverlay;
 
     private ToneGenerator tone;
+    private CountDownTimer countdownTimer;
 
     private final List<String> launcherLabels=new ArrayList<>();
     private final List<String> launcherPkgs=new ArrayList<>();
@@ -49,9 +50,13 @@ public class MainActivity extends Activity {
     @Override
     protected void onCreate(Bundle b){
         super.onCreate(b);
+
         setContentView(R.layout.activity_main);
 
-        tone=new ToneGenerator(AudioManager.STREAM_MUSIC,50);
+        tone=new ToneGenerator(
+                AudioManager.STREAM_MUSIC,
+                50
+        );
 
         launcherSpinner=findViewById(R.id.launcherSpinner);
         delaySpinner=findViewById(R.id.delaySpinner);
@@ -70,6 +75,7 @@ public class MainActivity extends Activity {
         initDelaySpinner();
     }
 
+
     private void loadLaunchers(){
 
         PackageManager pm=getPackageManager();
@@ -79,14 +85,20 @@ public class MainActivity extends Activity {
             if((ai.flags & ApplicationInfo.FLAG_SYSTEM)!=0)
                 continue;
 
-            Intent li=pm.getLaunchIntentForPackage(ai.packageName);
+            Intent li=
+                    pm.getLaunchIntentForPackage(
+                            ai.packageName
+                    );
 
             if(li!=null){
+
                 launcherLabels.add(
                         pm.getApplicationLabel(ai).toString()
                 );
 
-                launcherPkgs.add(ai.packageName);
+                launcherPkgs.add(
+                        ai.packageName
+                );
             }
         }
 
@@ -103,6 +115,7 @@ public class MainActivity extends Activity {
 
         launcherSpinner.setAdapter(ad);
     }
+
 
     private boolean isAllowedPreApp(ApplicationInfo ai){
 
@@ -139,6 +152,7 @@ public class MainActivity extends Activity {
         return launch!=null;
     }
 
+
     private void loadPreApps(){
 
         preApps.clear();
@@ -160,7 +174,9 @@ public class MainActivity extends Activity {
 
         Collections.sort(
                 preApps,
-                Comparator.comparing(a -> a.label.toLowerCase())
+                Comparator.comparing(
+                        a->a.label.toLowerCase()
+                )
         );
 
         List<String> labels=new ArrayList<>();
@@ -185,14 +201,17 @@ public class MainActivity extends Activity {
         pre2Spinner.setAdapter(ad);
     }
 
+
     private String getSelectedPrePkg(Spinner s){
 
         int pos=s.getSelectedItemPosition();
 
-        if(pos<=0) return "";
+        if(pos<=0)
+            return "";
 
         return preApps.get(pos-1).pkg;
     }
+
 
     private void initDelaySpinner(){
 
@@ -212,6 +231,7 @@ public class MainActivity extends Activity {
         );
 
         delaySpinner.setAdapter(ad);
+
         delaySpinner.setSelection(2);
 
         delaySpinner.setOnItemSelectedListener(
@@ -231,6 +251,7 @@ public class MainActivity extends Activity {
                             AdapterView<?> p){}
                 });
     }
+
 
     private void startSequence(){
 
@@ -261,9 +282,11 @@ public class MainActivity extends Activity {
         runCountdown();
     }
 
+
     private void launchPreApp(String pkg){
 
-        if(pkg.isEmpty()) return;
+        if(pkg.isEmpty())
+            return;
 
         Intent i=
                 getPackageManager()
@@ -273,55 +296,72 @@ public class MainActivity extends Activity {
             startActivity(i);
     }
 
+
     private void runCountdown(){
 
-        countdownOverlay.setVisibility(View.VISIBLE);
+        countdownOverlay.setVisibility(
+                View.VISIBLE
+        );
+
         countdownCircle.setProgress(0);
 
-        new CountDownTimer(
-                delaySeconds*1000L,
-                1000
-        ){
+        if(countdownTimer!=null){
+            countdownTimer.cancel();
+        }
 
-            public void onTick(long ms){
+        countdownTimer=
+                new CountDownTimer(
+                        delaySeconds*1000L,
+                        1000
+                ){
 
-                int sec=
-                        (int)Math.ceil(ms/1000.0);
+                    public void onTick(long ms){
 
-                countdownText.setText(
-                        String.valueOf(sec)
-                );
+                        int sec=
+                                (int)Math.ceil(ms/1000.0);
 
-                int pct=
-                        ((delaySeconds-sec)*100)
-                                /delaySeconds;
+                        countdownText.setText(
+                                String.valueOf(sec)
+                        );
 
-                countdownCircle.setProgress(pct);
+                        int pct=
+                                ((delaySeconds-sec)*100)
+                                        /delaySeconds;
 
-                tone.startTone(
-                        ToneGenerator.TONE_PROP_BEEP,
-                        180
-                );
+                        countdownCircle.setProgress(pct);
 
-                pulse();
-            }
+                        if(tone!=null){
+                            tone.startTone(
+                                    ToneGenerator.TONE_PROP_BEEP,
+                                    180
+                            );
+                        }
 
-            public void onFinish(){
+                        pulse();
+                    }
 
-                countdownText.setText("0");
-                countdownCircle.setProgress(100);
+                    public void onFinish(){
 
-                countdownOverlay.setVisibility(
-                        View.GONE
-                );
+                        countdownText.setText("0");
 
-                launchSelectedLauncher();
+                        countdownCircle.setProgress(100);
 
-                finish();
-            }
+                        countdownOverlay.setVisibility(
+                                View.GONE
+                        );
 
-        }.start();
+                        countdownTimer=null;
+
+                        launchSelectedLauncher();
+
+                        finish();
+                    }
+
+                };
+
+        countdownTimer.start();
     }
+
 
     private void pulse(){
 
@@ -339,6 +379,7 @@ public class MainActivity extends Activity {
 
         countdownCircle.startAnimation(s);
     }
+
 
     private void launchSelectedLauncher(){
 
@@ -362,4 +403,22 @@ public class MainActivity extends Activity {
         if(i!=null)
             startActivity(i);
     }
+
+
+    @Override
+    protected void onDestroy(){
+
+        if(countdownTimer!=null){
+            countdownTimer.cancel();
+            countdownTimer=null;
+        }
+
+        if(tone!=null){
+            tone.release();
+            tone=null;
+        }
+
+        super.onDestroy();
+    }
+
 }
