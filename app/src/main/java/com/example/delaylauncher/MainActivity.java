@@ -1,4 +1,4 @@
-package com.delaylauncher;
+package com.example.delaylauncher;
 
 import android.app.Activity;
 import android.content.Intent;
