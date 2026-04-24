@@ -1,0 +1,21 @@
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+
+<item android:id="@android:id/background">
+<shape android:shape="oval">
+<stroke
+android:width="10dp"
+android:color="#335577"/>
+</shape>
+</item>
+
+<item android:id="@android:id/progress">
+<shape
+android:shape="ring"
+android:useLevel="true"
+android:innerRadiusRatio="3"
+android:thickness="10dp">
+<solid android:color="#A5D6FF"/>
+</shape>
+</item>
+
+</layer-list>circular_progress_bar
