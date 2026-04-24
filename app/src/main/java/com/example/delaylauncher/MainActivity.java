@@ -15,6 +15,8 @@ import android.view.animation.ScaleAnimation;
 import android.widget.*;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 
 public class MainActivity extends Activity {
@@ -29,11 +31,20 @@ public class MainActivity extends Activity {
     private final List<String> launcherLabels=new ArrayList<>();
     private final List<String> launcherPkgs=new ArrayList<>();
 
-    private final List<String> preLabels=new ArrayList<>();
-    private final List<String> prePkgs=new ArrayList<>();
+    private final List<AppEntry> preApps=new ArrayList<>();
 
     private int delaySeconds=10;
     private boolean launchGuard=false;
+
+    private static class AppEntry{
+        String label;
+        String pkg;
+
+        AppEntry(String l,String p){
+            label=l;
+            pkg=p;
+        }
+    }
 
     @Override
     protected void onCreate(Bundle b){
@@ -52,7 +63,7 @@ public class MainActivity extends Activity {
         countdownText=findViewById(R.id.countdownText);
 
         findViewById(R.id.startButton)
-                .setOnClickListener(v -> startSequence());
+                .setOnClickListener(v->startSequence());
 
         loadLaunchers();
         loadPreApps();
@@ -60,6 +71,7 @@ public class MainActivity extends Activity {
     }
 
     private void loadLaunchers(){
+
         PackageManager pm=getPackageManager();
 
         for(ApplicationInfo ai:pm.getInstalledApplications(0)){
@@ -73,6 +85,7 @@ public class MainActivity extends Activity {
                 launcherLabels.add(
                         pm.getApplicationLabel(ai).toString()
                 );
+
                 launcherPkgs.add(ai.packageName);
             }
         }
@@ -101,10 +114,10 @@ public class MainActivity extends Activity {
         if(pkg.equals(getPackageName()))
             return false;
 
-        if(pkg.contains("settings"))
+        if(pkg.toLowerCase().contains("settings"))
             return false;
 
-        if(pkg.contains("packageinstaller"))
+        if(pkg.toLowerCase().contains("packageinstaller"))
             return false;
 
         Intent home=new Intent(Intent.ACTION_MAIN);
@@ -128,27 +141,40 @@ public class MainActivity extends Activity {
 
     private void loadPreApps(){
 
-        preLabels.add("None");
-        prePkgs.add("");
+        preApps.clear();
 
         PackageManager pm=getPackageManager();
 
         for(ApplicationInfo ai:pm.getInstalledApplications(0)){
 
             if(isAllowedPreApp(ai)){
-                preLabels.add(
-                        pm.getApplicationLabel(ai).toString()
-                );
 
-                prePkgs.add(ai.packageName);
+                preApps.add(
+                        new AppEntry(
+                                pm.getApplicationLabel(ai).toString(),
+                                ai.packageName
+                        )
+                );
             }
+        }
+
+        Collections.sort(
+                preApps,
+                Comparator.comparing(a -> a.label.toLowerCase())
+        );
+
+        List<String> labels=new ArrayList<>();
+        labels.add("None");
+
+        for(AppEntry e:preApps){
+            labels.add(e.label);
         }
 
         ArrayAdapter<String> ad=
                 new ArrayAdapter<>(
                         this,
                         R.layout.spinner_item,
-                        preLabels
+                        labels
                 );
 
         ad.setDropDownViewResource(
@@ -157,6 +183,15 @@ public class MainActivity extends Activity {
 
         pre1Spinner.setAdapter(ad);
         pre2Spinner.setAdapter(ad);
+    }
+
+    private String getSelectedPrePkg(Spinner s){
+
+        int pos=s.getSelectedItemPosition();
+
+        if(pos<=0) return "";
+
+        return preApps.get(pos-1).pkg;
     }
 
     private void initDelaySpinner(){
@@ -180,21 +215,20 @@ public class MainActivity extends Activity {
         delaySpinner.setSelection(2);
 
         delaySpinner.setOnItemSelectedListener(
-                new AdapterView.OnItemSelectedListener() {
+                new AdapterView.OnItemSelectedListener(){
 
                     public void onItemSelected(
                             AdapterView<?> p,
                             View v,
                             int pos,
-                            long id
-                    ){
+                            long id){
+
                         delaySeconds=
                                 Integer.parseInt(vals[pos]);
                     }
 
                     public void onNothingSelected(
-                            AdapterView<?> p
-                    ){}
+                            AdapterView<?> p){}
                 });
     }
 
@@ -202,22 +236,17 @@ public class MainActivity extends Activity {
 
         launchGuard=false;
 
-        String p1=
-                prePkgs.get(
-                        pre1Spinner.getSelectedItemPosition()
-                );
-
-        String p2=
-                prePkgs.get(
-                        pre2Spinner.getSelectedItemPosition()
-                );
+        String p1=getSelectedPrePkg(pre1Spinner);
+        String p2=getSelectedPrePkg(pre2Spinner);
 
         if(!p1.isEmpty() && p1.equals(p2)){
+
             Toast.makeText(
                     this,
                     "Pre-launch apps must differ",
                     Toast.LENGTH_SHORT
             ).show();
+
             return;
         }
 
@@ -233,6 +262,7 @@ public class MainActivity extends Activity {
     }
 
     private void launchPreApp(String pkg){
+
         if(pkg.isEmpty()) return;
 
         Intent i=
@@ -315,13 +345,17 @@ public class MainActivity extends Activity {
         if(launchGuard)
             return;
 
+        if(launcherPkgs.isEmpty())
+            return;
+
         launchGuard=true;
 
         Intent i=
                 getPackageManager()
                         .getLaunchIntentForPackage(
                                 launcherPkgs.get(
-                                        launcherSpinner.getSelectedItemPosition()
+                                        launcherSpinner
+                                                .getSelectedItemPosition()
                                 )
                         );
 
