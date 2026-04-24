@@ -3,20 +3,18 @@ package com.example.delaylauncher;
 import android.app.Activity;
 import android.content.*;
 import android.content.pm.*;
+import android.media.AudioManager;
+import android.media.ToneGenerator;
 import android.os.*;
-import android.view.*;
+import android.view.View;
 import android.widget.*;
 
 import java.util.*;
 
 public class MainActivity extends Activity {
 
-private static final String PREFS="DelayPrefs";
-
-Spinner preApp1Spinner,preApp2Spinner;
-Spinner delaySpinner,appSpinner;
+Spinner preApp1Spinner,preApp2Spinner,delaySpinner,appSpinner;
 Button startButton;
-
 FrameLayout circleContainer;
 ProgressBar circleProgress;
 TextView circleText;
@@ -25,6 +23,11 @@ List<ResolveInfo> launchers;
 List<ResolveInfo> preApps;
 
 CountDownTimer timer;
+
+ToneGenerator tone=
+new ToneGenerator(
+AudioManager.STREAM_NOTIFICATION,
+50);
 
 @Override
 protected void onCreate(Bundle b){
@@ -47,46 +50,35 @@ setupSpinners();
 
 startButton.setOnClickListener(v->{
 
-int delay=Integer.parseInt(
+int d=Integer.parseInt(
 delaySpinner.getSelectedItem().toString()
 );
 
 String pkg=null;
 
-if(delay!=0){
+if(d!=0){
 pkg=launchers.get(
 appSpinner.getSelectedItemPosition()
 ).activityInfo.packageName;
 }
 
-startCountdown(delay,pkg);
+startCountdown(d,pkg);
 
-});
-
-circleContainer.setOnTouchListener((v,e)->{
-if(e.getAction()==MotionEvent.ACTION_DOWN){
-if(timer!=null) timer.cancel();
-showSetup();
-}
-return true;
 });
 
 }
 
 private void loadApps(){
 
+PackageManager pm=getPackageManager();
+
 launchers=new ArrayList<>();
 preApps=new ArrayList<>();
 
-PackageManager pm=getPackageManager();
+Intent home=
+new Intent(Intent.ACTION_MAIN,null);
 
-Intent home=new Intent(
-Intent.ACTION_MAIN,null
-);
-
-home.addCategory(
-Intent.CATEGORY_HOME
-);
+home.addCategory(Intent.CATEGORY_HOME);
 
 for(ResolveInfo r:
 pm.queryIntentActivities(home,0)){
@@ -99,33 +91,32 @@ launchers.add(r);
 
 }
 
-Intent all=new Intent(
-Intent.ACTION_MAIN,null
-);
+List<ApplicationInfo> apps=
+pm.getInstalledApplications(0);
 
-all.addCategory(
-Intent.CATEGORY_LAUNCHER
-);
+for(ApplicationInfo a:apps){
 
-for(ResolveInfo r:
-pm.queryIntentActivities(all,0)){
+if((a.flags &
+ApplicationInfo.FLAG_SYSTEM)!=0)
+continue;
 
-boolean isLauncher=false;
+String pkg=a.packageName;
 
-for(ResolveInfo h:launchers){
-if(h.activityInfo.packageName.equals(
-r.activityInfo.packageName
-)){
-isLauncher=true;
-break;
-}
-}
+if(pkg.equals(getPackageName()))
+continue;
 
-if(!isLauncher &&
-!r.activityInfo.packageName.equals(
-getPackageName()
-)){
-preApps.add(r);
+if(pkg.toLowerCase().contains("settings"))
+continue;
+
+Intent li=
+pm.getLaunchIntentForPackage(pkg);
+
+if(li!=null){
+ResolveInfo ri=
+pm.resolveActivity(li,0);
+
+if(ri!=null)
+preApps.add(ri);
 }
 
 }
@@ -170,24 +161,23 @@ pos==0?View.GONE:View.VISIBLE
 
 public void onNothingSelected(
 AdapterView<?> p){}
+
 });
 
-List<String> lNames=
-new ArrayList<>();
+List<String> ln=new ArrayList<>();
 
-for(ResolveInfo r:launchers){
-lNames.add(
+for(ResolveInfo r:launchers)
+ln.add(
 r.loadLabel(
 getPackageManager()
 ).toString()
 );
-}
 
-ArrayAdapter<String>la=
+ArrayAdapter<String> la=
 new ArrayAdapter<>(
 this,
 R.layout.spinner_item,
-lNames
+ln
 );
 
 la.setDropDownViewResource(
@@ -196,24 +186,23 @@ R.layout.spinner_dropdown
 
 appSpinner.setAdapter(la);
 
-List<String> pNames=
+List<String> pn=
 new ArrayList<>();
 
-pNames.add("NONE");
+pn.add("NONE");
 
-for(ResolveInfo r:preApps){
-pNames.add(
+for(ResolveInfo r:preApps)
+pn.add(
 r.loadLabel(
 getPackageManager()
 ).toString()
 );
-}
 
-ArrayAdapter<String>pa=
+ArrayAdapter<String> pa=
 new ArrayAdapter<>(
 this,
 R.layout.spinner_item,
-pNames
+pn
 );
 
 pa.setDropDownViewResource(
@@ -237,7 +226,8 @@ String pkg=
 preApps.get(pos-1)
 .activityInfo.packageName;
 
-if(launched.contains(pkg)) return;
+if(launched.contains(pkg))
+return;
 
 launched.add(pkg);
 
@@ -245,48 +235,16 @@ Intent i=
 getPackageManager()
 .getLaunchIntentForPackage(pkg);
 
-if(i!=null){
-i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+if(i!=null)
 startActivity(i);
-}
 
 }
 
 private void startCountdown(
 int d,
-String pkg
-){
+String pkg){
 
-hideSetup();
-
-circleContainer.setVisibility(
-View.VISIBLE
-);
-
-timer=
-new CountDownTimer(
-Math.max(d,1)*1000L,
-100
-){
-
-public void onTick(long ms){
-
-circleText.setText(
-String.valueOf(
-(int)Math.ceil(ms/1000.0)
-));
-
-circleProgress.setProgress(
-(int)(
-((Math.max(d,1)*1000L-ms)*100)
-/
-(Math.max(d,1)*1000L)
-)
-);
-
-}
-
-public void onFinish(){
+if(d==0){
 
 Set<String> launched=
 new HashSet<>();
@@ -301,10 +259,66 @@ preApp2Spinner,
 launched
 );
 
-if(d==0){
 finishAffinity();
 return;
+
 }
+
+circleContainer.setVisibility(
+View.VISIBLE
+);
+
+timer=
+new CountDownTimer(
+d*1000L,
+1000){
+
+public void onTick(long ms){
+
+int sec=(int)(ms/1000);
+
+circleText.setText(
+String.valueOf(sec)
+);
+
+circleProgress.setProgress(
+(d-sec)*100/d
+);
+
+tone.startTone(
+ToneGenerator.TONE_PROP_BEEP2,
+120
+);
+
+circleContainer.animate()
+.scaleX(1.08f)
+.scaleY(1.08f)
+.setDuration(180)
+.withEndAction(() ->
+circleContainer.animate()
+.scaleX(1f)
+.scaleY(1f)
+.setDuration(180));
+
+}
+
+public void onFinish(){
+
+circleProgress.setProgress(100);
+circleText.setText("0");
+
+Set<String> launched=
+new HashSet<>();
+
+launchOptional(
+preApp1Spinner,
+launched
+);
+
+launchOptional(
+preApp2Spinner,
+launched
+);
 
 new Handler(
 Looper.getMainLooper()
@@ -314,9 +328,8 @@ Intent i=
 getPackageManager()
 .getLaunchIntentForPackage(pkg);
 
-if(i!=null){
+if(i!=null)
 startActivity(i);
-}
 
 finishAffinity();
 
@@ -325,31 +338,6 @@ finishAffinity();
 }
 
 }.start();
-
-}
-
-private void hideSetup(){
-
-preApp1Spinner.setVisibility(View.GONE);
-preApp2Spinner.setVisibility(View.GONE);
-delaySpinner.setVisibility(View.GONE);
-appSpinner.setVisibility(View.GONE);
-startButton.setVisibility(View.GONE);
-
-}
-
-private void showSetup(){
-
-preApp1Spinner.setVisibility(View.VISIBLE);
-preApp2Spinner.setVisibility(View.VISIBLE);
-delaySpinner.setVisibility(View.VISIBLE);
-startButton.setVisibility(View.VISIBLE);
-
-if(delaySpinner.getSelectedItemPosition()!=0){
-appSpinner.setVisibility(View.VISIBLE);
-}
-
-circleContainer.setVisibility(View.GONE);
 
 }
 
