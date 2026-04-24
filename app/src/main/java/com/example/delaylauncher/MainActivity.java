@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.content.Intent;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
+import android.content.pm.ResolveInfo;
 import android.media.AudioManager;
 import android.media.ToneGenerator;
 import android.os.Bundle;
@@ -11,232 +12,210 @@ import android.os.CountDownTimer;
 import android.view.View;
 import android.view.animation.Animation;
 import android.view.animation.ScaleAnimation;
-import android.widget.AdapterView;
-import android.widget.ArrayAdapter;
-import android.widget.Button;
-import android.widget.ProgressBar;
-import android.widget.Spinner;
-import android.widget.TextView;
-import android.widget.Toast;
+import android.widget.*;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public class MainActivity extends Activity {
 
-    private Spinner launcherSpinner;
-    private Spinner delaySpinner;
-    private Spinner preApp1Spinner;
-    private Spinner preApp2Spinner;
-    private Button startButton;
-
-    private View countdownOverlay;
+    private Spinner launcherSpinner,delaySpinner,pre1Spinner,pre2Spinner;
     private ProgressBar countdownCircle;
     private TextView countdownText;
-
-    private final List<String> launcherLabels = new ArrayList<>();
-    private final List<String> launcherPackages = new ArrayList<>();
-
-    private final List<String> preAppLabels = new ArrayList<>();
-    private final List<String> preAppPackages = new ArrayList<>();
-
-    private int delaySeconds = 10;
-    private boolean launchGuard = false;
+    private View countdownOverlay;
 
     private ToneGenerator tone;
 
+    private final List<String> launcherLabels=new ArrayList<>();
+    private final List<String> launcherPkgs=new ArrayList<>();
+
+    private final List<String> preLabels=new ArrayList<>();
+    private final List<String> prePkgs=new ArrayList<>();
+
+    private int delaySeconds=10;
+    private boolean launchGuard=false;
+
     @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
+    protected void onCreate(Bundle b){
+        super.onCreate(b);
         setContentView(R.layout.activity_main);
 
-        tone = new ToneGenerator(AudioManager.STREAM_MUSIC,80);
+        tone=new ToneGenerator(AudioManager.STREAM_MUSIC,50);
 
-        launcherSpinner = findViewById(R.id.launcherSpinner);
-        delaySpinner = findViewById(R.id.delaySpinner);
-        preApp1Spinner = findViewById(R.id.preApp1Spinner);
-        preApp2Spinner = findViewById(R.id.preApp2Spinner);
-        startButton = findViewById(R.id.startButton);
+        launcherSpinner=findViewById(R.id.launcherSpinner);
+        delaySpinner=findViewById(R.id.delaySpinner);
+        pre1Spinner=findViewById(R.id.preApp1Spinner);
+        pre2Spinner=findViewById(R.id.preApp2Spinner);
 
-        countdownOverlay = findViewById(R.id.countdownOverlay);
-        countdownCircle = findViewById(R.id.countdownCircle);
-        countdownText = findViewById(R.id.countdownText);
+        countdownOverlay=findViewById(R.id.countdownOverlay);
+        countdownCircle=findViewById(R.id.countdownCircle);
+        countdownText=findViewById(R.id.countdownText);
+
+        findViewById(R.id.startButton)
+                .setOnClickListener(v -> startSequence());
 
         loadLaunchers();
         loadPreApps();
         initDelaySpinner();
-
-        startButton.setOnClickListener(v -> startSequence());
     }
 
-    private void loadLaunchers() {
+    private void loadLaunchers(){
+        PackageManager pm=getPackageManager();
 
-        PackageManager pm = getPackageManager();
+        for(ApplicationInfo ai:pm.getInstalledApplications(0)){
 
-        List<ApplicationInfo> apps = pm.getInstalledApplications(0);
-
-        for (ApplicationInfo ai : apps) {
-
-            if ((ai.flags & ApplicationInfo.FLAG_SYSTEM) != 0) {
+            if((ai.flags & ApplicationInfo.FLAG_SYSTEM)!=0)
                 continue;
-            }
 
-            Intent launchIntent =
-                    pm.getLaunchIntentForPackage(ai.packageName);
+            Intent li=pm.getLaunchIntentForPackage(ai.packageName);
 
-            if (launchIntent != null) {
-
+            if(li!=null){
                 launcherLabels.add(
                         pm.getApplicationLabel(ai).toString()
                 );
-
-                launcherPackages.add(ai.packageName);
+                launcherPkgs.add(ai.packageName);
             }
         }
 
-        ArrayAdapter<String> adapter =
+        ArrayAdapter<String> ad=
                 new ArrayAdapter<>(
                         this,
                         R.layout.spinner_item,
                         launcherLabels
                 );
 
-        adapter.setDropDownViewResource(
+        ad.setDropDownViewResource(
                 R.layout.spinner_dropdown
         );
 
-        launcherSpinner.setAdapter(adapter);
+        launcherSpinner.setAdapter(ad);
     }
 
+    private boolean isAllowedPreApp(ApplicationInfo ai){
 
-    private void loadPreApps() {
+        if((ai.flags & ApplicationInfo.FLAG_SYSTEM)!=0)
+            return false;
 
-        preAppLabels.add("None");
-        preAppPackages.add("");
+        String pkg=ai.packageName;
 
-        PackageManager pm = getPackageManager();
+        if(pkg.equals(getPackageName()))
+            return false;
 
-        List<ApplicationInfo> apps =
-                pm.getInstalledApplications(0);
+        if(pkg.contains("settings"))
+            return false;
 
-        for (ApplicationInfo ai : apps) {
+        if(pkg.contains("packageinstaller"))
+            return false;
 
-            if (isUserNonLauncherApp(ai)) {
+        Intent home=new Intent(Intent.ACTION_MAIN);
+        home.addCategory(Intent.CATEGORY_HOME);
 
-                preAppLabels.add(
+        List<ResolveInfo> homes=
+                getPackageManager()
+                        .queryIntentActivities(home,0);
+
+        for(ResolveInfo ri:homes){
+            if(ri.activityInfo.packageName.equals(pkg))
+                return false;
+        }
+
+        Intent launch=
+                getPackageManager()
+                        .getLaunchIntentForPackage(pkg);
+
+        return launch!=null;
+    }
+
+    private void loadPreApps(){
+
+        preLabels.add("None");
+        prePkgs.add("");
+
+        PackageManager pm=getPackageManager();
+
+        for(ApplicationInfo ai:pm.getInstalledApplications(0)){
+
+            if(isAllowedPreApp(ai)){
+                preLabels.add(
                         pm.getApplicationLabel(ai).toString()
                 );
 
-                preAppPackages.add(
-                        ai.packageName
-                );
+                prePkgs.add(ai.packageName);
             }
         }
 
-        ArrayAdapter<String> adapter =
+        ArrayAdapter<String> ad=
                 new ArrayAdapter<>(
                         this,
                         R.layout.spinner_item,
-                        preAppLabels
+                        preLabels
                 );
 
-        adapter.setDropDownViewResource(
+        ad.setDropDownViewResource(
                 R.layout.spinner_dropdown
         );
 
-        preApp1Spinner.setAdapter(adapter);
-        preApp2Spinner.setAdapter(adapter);
+        pre1Spinner.setAdapter(ad);
+        pre2Spinner.setAdapter(ad);
     }
-
-
-    private boolean isUserNonLauncherApp(ApplicationInfo ai){
-
-        if ((ai.flags & ApplicationInfo.FLAG_SYSTEM) != 0)
-            return false;
-
-        if ((ai.flags &
-                ApplicationInfo.FLAG_UPDATED_SYSTEM_APP) != 0)
-            return false;
-
-        if (ai.packageName.equals(getPackageName()))
-            return false;
-
-        Intent launchIntent =
-                getPackageManager()
-                        .getLaunchIntentForPackage(
-                                ai.packageName
-                        );
-
-        return launchIntent == null;
-    }
-
 
     private void initDelaySpinner(){
 
-        String[] delays={
+        String[] vals={
                 "0","5","10","15","20","30","45","60"
         };
 
-        ArrayAdapter<String> adapter =
+        ArrayAdapter<String> ad=
                 new ArrayAdapter<>(
                         this,
                         R.layout.spinner_item,
-                        delays
+                        vals
                 );
 
-        adapter.setDropDownViewResource(
+        ad.setDropDownViewResource(
                 R.layout.spinner_dropdown
         );
 
-        delaySpinner.setAdapter(adapter);
-
+        delaySpinner.setAdapter(ad);
         delaySpinner.setSelection(2);
 
         delaySpinner.setOnItemSelectedListener(
                 new AdapterView.OnItemSelectedListener() {
 
-                    @Override
                     public void onItemSelected(
-                            AdapterView<?> parent,
-                            View view,
-                            int position,
+                            AdapterView<?> p,
+                            View v,
+                            int pos,
                             long id
-                    ) {
-                        delaySeconds =
-                                Integer.parseInt(
-                                        delays[position]
-                                );
+                    ){
+                        delaySeconds=
+                                Integer.parseInt(vals[pos]);
                     }
 
-                    @Override
                     public void onNothingSelected(
-                            AdapterView<?> parent
+                            AdapterView<?> p
                     ){}
-                }
-        );
+                });
     }
-
 
     private void startSequence(){
 
         launchGuard=false;
 
         String p1=
-                preAppPackages.get(
-                        preApp1Spinner
-                                .getSelectedItemPosition()
+                prePkgs.get(
+                        pre1Spinner.getSelectedItemPosition()
                 );
 
         String p2=
-                preAppPackages.get(
-                        preApp2Spinner
-                                .getSelectedItemPosition()
+                prePkgs.get(
+                        pre2Spinner.getSelectedItemPosition()
                 );
 
         if(!p1.isEmpty() && p1.equals(p2)){
             Toast.makeText(
                     this,
-                    "Pre-launch apps must be different",
+                    "Pre-launch apps must differ",
                     Toast.LENGTH_SHORT
             ).show();
             return;
@@ -253,44 +232,41 @@ public class MainActivity extends Activity {
         runCountdown();
     }
 
-
     private void launchPreApp(String pkg){
-
-        if(pkg==null || pkg.isEmpty())
-            return;
+        if(pkg.isEmpty()) return;
 
         Intent i=
                 getPackageManager()
                         .getLaunchIntentForPackage(pkg);
 
-        if(i!=null){
+        if(i!=null)
             startActivity(i);
-        }
     }
-
 
     private void runCountdown(){
 
         countdownOverlay.setVisibility(View.VISIBLE);
-
-        pulse();
+        countdownCircle.setProgress(0);
 
         new CountDownTimer(
                 delaySeconds*1000L,
                 1000
         ){
 
-            @Override
-            public void onTick(long millisUntilFinished){
+            public void onTick(long ms){
 
                 int sec=
-                        (int)Math.ceil(
-                                millisUntilFinished/1000.0
-                        );
+                        (int)Math.ceil(ms/1000.0);
 
                 countdownText.setText(
                         String.valueOf(sec)
                 );
+
+                int pct=
+                        ((delaySeconds-sec)*100)
+                                /delaySeconds;
+
+                countdownCircle.setProgress(pct);
 
                 tone.startTone(
                         ToneGenerator.TONE_PROP_BEEP,
@@ -300,10 +276,10 @@ public class MainActivity extends Activity {
                 pulse();
             }
 
-            @Override
             public void onFinish(){
 
                 countdownText.setText("0");
+                countdownCircle.setProgress(100);
 
                 countdownOverlay.setVisibility(
                         View.GONE
@@ -317,10 +293,9 @@ public class MainActivity extends Activity {
         }.start();
     }
 
-
     private void pulse(){
 
-        ScaleAnimation anim=
+        ScaleAnimation s=
                 new ScaleAnimation(
                         1f,1.08f,
                         1f,1.08f,
@@ -328,13 +303,12 @@ public class MainActivity extends Activity {
                         Animation.RELATIVE_TO_SELF,.5f
                 );
 
-        anim.setDuration(400);
-        anim.setRepeatMode(Animation.REVERSE);
-        anim.setRepeatCount(1);
+        s.setDuration(400);
+        s.setRepeatMode(Animation.REVERSE);
+        s.setRepeatCount(1);
 
-        countdownCircle.startAnimation(anim);
+        countdownCircle.startAnimation(s);
     }
-
 
     private void launchSelectedLauncher(){
 
@@ -343,19 +317,15 @@ public class MainActivity extends Activity {
 
         launchGuard=true;
 
-        String pkg=
-                launcherPackages.get(
-                        launcherSpinner
-                                .getSelectedItemPosition()
-                );
-
         Intent i=
                 getPackageManager()
-                        .getLaunchIntentForPackage(pkg);
+                        .getLaunchIntentForPackage(
+                                launcherPkgs.get(
+                                        launcherSpinner.getSelectedItemPosition()
+                                )
+                        );
 
-        if(i!=null){
+        if(i!=null)
             startActivity(i);
-        }
     }
-
 }
