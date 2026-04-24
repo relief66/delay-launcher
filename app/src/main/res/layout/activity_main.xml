@@ -95,7 +95,6 @@ android:focusable="true">
 
 <ProgressBar
 android:id="@+id/countdownCircle"
-style="?android:attr/progressBarStyleHorizontal"
 android:indeterminate="false"
 android:max="100"
 android:progress="0"
