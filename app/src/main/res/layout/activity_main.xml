@@ -49,8 +49,7 @@
                     android:text="App preliminare 1"
                     android:textSize="16sp"
                     android:textColor="#24323A"
-                    android:drawableStart="@drawable/ic_phone_small"
-                    android:drawablePadding="8dp"/>
+                    />
 
                 <Spinner
                     android:id="@+id/preApp1Spinner"
@@ -66,8 +65,7 @@
                     android:textSize="16sp"
                     android:textColor="#24323A"
                     android:layout_marginTop="18dp"
-                    android:drawableStart="@drawable/ic_phone_small"
-                    android:drawablePadding="8dp"/>
+                    />
 
                 <Spinner
                     android:id="@+id/preApp2Spinner"
@@ -89,8 +87,7 @@
                     android:text="Ritardo secondi"
                     android:textSize="16sp"
                     android:textColor="#24323A"
-                    android:drawableStart="@drawable/ic_timer_small"
-                    android:drawablePadding="8dp"/>
+                    />
 
                 <Spinner
                     android:id="@+id/delaySpinner"
