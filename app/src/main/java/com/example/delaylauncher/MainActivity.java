@@ -1,424 +1,357 @@
 package com.example.delaylauncher;
 
-import android.app.Activity;
 import android.content.Intent;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
-import android.content.pm.ResolveInfo;
 import android.media.AudioManager;
 import android.media.ToneGenerator;
 import android.os.Bundle;
 import android.os.CountDownTimer;
 import android.view.View;
-import android.view.animation.Animation;
-import android.view.animation.ScaleAnimation;
-import android.widget.*;
+import android.widget.ArrayAdapter;
+import android.widget.Button;
+import android.widget.ProgressBar;
+import android.widget.Spinner;
+import android.widget.TextView;
+
+import androidx.appcompat.app.AppCompatActivity;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
-public class MainActivity extends Activity {
+public class MainActivity extends AppCompatActivity {
 
-    private Spinner launcherSpinner,delaySpinner,pre1Spinner,pre2Spinner;
-    private ProgressBar countdownCircle;
-    private TextView countdownText;
+    private Spinner preApp1Spinner;
+    private Spinner preApp2Spinner;
+    private Spinner delaySpinner;
+    private Spinner launcherSpinner;
+
+    private Button startButton;
+
     private View countdownOverlay;
+    private ProgressBar circularProgress;
 
-    private ToneGenerator tone;
+    private TextView countdownNumber;
+    private TextView countdownLabel;
+
     private CountDownTimer countdownTimer;
+    private ToneGenerator tone;
 
-    private final List<String> launcherLabels=new ArrayList<>();
-    private final List<String> launcherPkgs=new ArrayList<>();
+    private boolean launchTriggered = false;
 
-    private final List<AppEntry> preApps=new ArrayList<>();
+    private final List<AppEntry> apps = new ArrayList<>();
 
-    private int delaySeconds=10;
-    private boolean launchGuard=false;
-
-    private static class AppEntry{
+    static class AppEntry {
         String label;
         String pkg;
 
-        AppEntry(String l,String p){
-            label=l;
-            pkg=p;
+        AppEntry(String label, String pkg) {
+            this.label = label;
+            this.pkg = pkg;
         }
     }
 
     @Override
-    protected void onCreate(Bundle b){
-        super.onCreate(b);
-
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        tone=new ToneGenerator(
-                AudioManager.STREAM_MUSIC,
+        preApp1Spinner = findViewById(R.id.preApp1Spinner);
+        preApp2Spinner = findViewById(R.id.preApp2Spinner);
+        delaySpinner = findViewById(R.id.delaySpinner);
+        launcherSpinner = findViewById(R.id.launcherSpinner);
+
+        startButton = findViewById(R.id.startButton);
+
+        countdownOverlay = findViewById(R.id.countdownOverlay);
+        circularProgress = findViewById(R.id.circularProgress);
+
+        countdownNumber = findViewById(R.id.countdownNumber);
+        countdownLabel = findViewById(R.id.countdownLabel);
+
+        tone = new ToneGenerator(
+                AudioManager.STREAM_NOTIFICATION,
                 50
         );
 
-        launcherSpinner=findViewById(R.id.launcherSpinner);
-        delaySpinner=findViewById(R.id.delaySpinner);
-        pre1Spinner=findViewById(R.id.preApp1Spinner);
-        pre2Spinner=findViewById(R.id.preApp2Spinner);
+        populateDelaySpinner();
+        populateApps();
 
-        countdownOverlay=findViewById(R.id.countdownOverlay);
-        countdownCircle=findViewById(R.id.countdownCircle);
-        countdownText=findViewById(R.id.countdownText);
-
-        findViewById(R.id.startButton)
-                .setOnClickListener(v->startSequence());
-
-        loadLaunchers();
-        loadPreApps();
-        initDelaySpinner();
+        startButton.setOnClickListener(v -> startFlow());
     }
 
+    private void populateDelaySpinner() {
 
-    private void loadLaunchers(){
+        List<String> delays = new ArrayList<>();
 
-        PackageManager pm=getPackageManager();
-
-        for(ApplicationInfo ai:pm.getInstalledApplications(0)){
-
-            if((ai.flags & ApplicationInfo.FLAG_SYSTEM)!=0)
-                continue;
-
-            Intent li=
-                    pm.getLaunchIntentForPackage(
-                            ai.packageName
-                    );
-
-            if(li!=null){
-
-                launcherLabels.add(
-                        pm.getApplicationLabel(ai).toString()
-                );
-
-                launcherPkgs.add(
-                        ai.packageName
-                );
-            }
+        for (int i = 0; i <= 60; i += 5) {
+            delays.add(String.valueOf(i));
         }
 
-        ArrayAdapter<String> ad=
+        ArrayAdapter<String> adapter =
                 new ArrayAdapter<>(
                         this,
-                        R.layout.spinner_item,
-                        launcherLabels
+                        R.layout.spinner_dropdown,
+                        delays
                 );
 
-        ad.setDropDownViewResource(
+        adapter.setDropDownViewResource(
                 R.layout.spinner_dropdown
         );
 
-        launcherSpinner.setAdapter(ad);
+        delaySpinner.setAdapter(adapter);
     }
 
+    private void populateApps() {
 
-    private boolean isAllowedPreApp(ApplicationInfo ai){
+        apps.clear();
 
-        if((ai.flags & ApplicationInfo.FLAG_SYSTEM)!=0)
-            return false;
+        PackageManager pm = getPackageManager();
 
-        String pkg=ai.packageName;
-
-        if(pkg.equals(getPackageName()))
-            return false;
-
-        if(pkg.toLowerCase().contains("settings"))
-            return false;
-
-        if(pkg.toLowerCase().contains("packageinstaller"))
-            return false;
-
-        Intent home=new Intent(Intent.ACTION_MAIN);
-        home.addCategory(Intent.CATEGORY_HOME);
-
-        List<ResolveInfo> homes=
-                getPackageManager()
-                        .queryIntentActivities(home,0);
-
-        for(ResolveInfo ri:homes){
-            if(ri.activityInfo.packageName.equals(pkg))
-                return false;
-        }
-
-        Intent launch=
-                getPackageManager()
-                        .getLaunchIntentForPackage(pkg);
-
-        return launch!=null;
-    }
-
-
-    private void loadPreApps(){
-
-        preApps.clear();
-
-        PackageManager pm=getPackageManager();
-
-        for(ApplicationInfo ai:pm.getInstalledApplications(0)){
-
-            if(isAllowedPreApp(ai)){
-
-                preApps.add(
-                        new AppEntry(
-                                pm.getApplicationLabel(ai).toString(),
-                                ai.packageName
+        Set<String> blockedPackages =
+                new HashSet<>(
+                        Arrays.asList(
+                                "com.android.settings",
+                                "com.android.packageinstaller",
+                                "com.google.android.packageinstaller"
                         )
                 );
+
+        Intent homeIntent =
+                new Intent(Intent.ACTION_MAIN);
+
+        homeIntent.addCategory(
+                Intent.CATEGORY_HOME
+        );
+
+        if (homeIntent.resolveActivity(pm) != null) {
+            blockedPackages.add(
+                    homeIntent.resolveActivity(pm)
+                            .getPackageName()
+            );
+        }
+
+        List<ApplicationInfo> installedApps =
+                pm.getInstalledApplications(0);
+
+        for (ApplicationInfo app : installedApps) {
+
+            if ((app.flags &
+                 ApplicationInfo.FLAG_SYSTEM) != 0) {
+                continue;
             }
+
+            if (blockedPackages.contains(
+                    app.packageName)) {
+                continue;
+            }
+
+            if (pm.getLaunchIntentForPackage(
+                    app.packageName) == null) {
+                continue;
+            }
+
+            String label =
+                    pm.getApplicationLabel(app)
+                            .toString();
+
+            if (label.trim().isEmpty()) {
+                continue;
+            }
+
+            apps.add(
+                    new AppEntry(
+                            label,
+                            app.packageName
+                    )
+            );
         }
 
         Collections.sort(
-                preApps,
+                apps,
                 Comparator.comparing(
-                        a->a.label.toLowerCase()
+                        a -> a.label.toLowerCase()
                 )
         );
 
-        List<String> labels=new ArrayList<>();
-        labels.add("None");
+        List<String> labels = new ArrayList<>();
 
-        for(AppEntry e:preApps){
-            labels.add(e.label);
+        // default placeholder richiesto
+        labels.add("Nessuno");
+
+        for (AppEntry app : apps) {
+            labels.add(app.label);
         }
 
-        ArrayAdapter<String> ad=
+        ArrayAdapter<String> adapter =
                 new ArrayAdapter<>(
                         this,
-                        R.layout.spinner_item,
+                        R.layout.spinner_dropdown,
                         labels
                 );
 
-        ad.setDropDownViewResource(
+        adapter.setDropDownViewResource(
                 R.layout.spinner_dropdown
         );
 
-        pre1Spinner.setAdapter(ad);
-        pre2Spinner.setAdapter(ad);
+        preApp1Spinner.setAdapter(adapter);
+        preApp2Spinner.setAdapter(adapter);
+        launcherSpinner.setAdapter(adapter);
     }
 
+    private void startFlow() {
 
-    private String getSelectedPrePkg(Spinner s){
+        if (launchTriggered) {
+            return;
+        }
 
-        int pos=s.getSelectedItemPosition();
-
-        if(pos<=0)
-            return "";
-
-        return preApps.get(pos-1).pkg;
-    }
-
-
-    private void initDelaySpinner(){
-
-        String[] vals={
-                "0","5","10","15","20","30","45","60"
-        };
-
-        ArrayAdapter<String> ad=
-                new ArrayAdapter<>(
-                        this,
-                        R.layout.spinner_item,
-                        vals
+        int delay =
+                Integer.parseInt(
+                        delaySpinner
+                                .getSelectedItem()
+                                .toString()
                 );
 
-        ad.setDropDownViewResource(
-                R.layout.spinner_dropdown
-        );
-
-        delaySpinner.setAdapter(ad);
-
-        delaySpinner.setSelection(2);
-
-        delaySpinner.setOnItemSelectedListener(
-                new AdapterView.OnItemSelectedListener(){
-
-                    public void onItemSelected(
-                            AdapterView<?> p,
-                            View v,
-                            int pos,
-                            long id){
-
-                        delaySeconds=
-                                Integer.parseInt(vals[pos]);
-                    }
-
-                    public void onNothingSelected(
-                            AdapterView<?> p){}
-                });
-    }
-
-
-    private void startSequence(){
-
-        launchGuard=false;
-
-        String p1=getSelectedPrePkg(pre1Spinner);
-        String p2=getSelectedPrePkg(pre2Spinner);
-
-        if(!p1.isEmpty() && p1.equals(p2)){
-
-            Toast.makeText(
-                    this,
-                    "Pre-launch apps must differ",
-                    Toast.LENGTH_SHORT
-            ).show();
-
+        if (delay == 0) {
+            launchSelectedApps();
             return;
         }
-
-        launchPreApp(p1);
-        launchPreApp(p2);
-
-        if(delaySeconds==0){
-            launchSelectedLauncher();
-            return;
-        }
-
-        runCountdown();
-    }
-
-
-    private void launchPreApp(String pkg){
-
-        if(pkg.isEmpty())
-            return;
-
-        Intent i=
-                getPackageManager()
-                        .getLaunchIntentForPackage(pkg);
-
-        if(i!=null)
-            startActivity(i);
-    }
-
-
-    private void runCountdown(){
 
         countdownOverlay.setVisibility(
                 View.VISIBLE
         );
 
-        countdownCircle.setProgress(0);
+        circularProgress.setProgress(0);
 
-        if(countdownTimer!=null){
-            countdownTimer.cancel();
-        }
+        countdownLabel.setText("sec");
 
-        countdownTimer=
+        countdownTimer =
                 new CountDownTimer(
-                        delaySeconds*1000L,
-                        1000
-                ){
+                        delay * 1000L,
+                        100
+                ) {
 
-                    public void onTick(long ms){
+                    @Override
+                    public void onTick(
+                            long msRemaining
+                    ) {
 
-                        int sec=
-                                (int)Math.ceil(ms/1000.0);
+                        int total = delay * 1000;
 
-                        countdownText.setText(
-                                String.valueOf(sec)
+                        int progress =
+                                (int) (
+                                   (total - msRemaining)
+                                   *100
+                                   /total
+                                );
+
+                        circularProgress.setProgress(
+                                Math.min(
+                                        100,
+                                        progress
+                                )
                         );
 
-                        int pct=
-                                ((delaySeconds-sec)*100)
-                                        /delaySeconds;
-
-                        countdownCircle.setProgress(pct);
-
-                        if(tone!=null){
-                            tone.startTone(
-                                    ToneGenerator.TONE_PROP_BEEP,
-                                    180
-                            );
-                        }
-
-                        pulse();
+                        countdownNumber.setText(
+                                String.valueOf(
+                                        (msRemaining+999)/1000
+                                )
+                        );
                     }
 
-                    public void onFinish(){
+                    @Override
+                    public void onFinish() {
 
-                        countdownText.setText("0");
-
-                        countdownCircle.setProgress(100);
+                        circularProgress.setProgress(
+                                100
+                        );
 
                         countdownOverlay.setVisibility(
                                 View.GONE
                         );
 
-                        countdownTimer=null;
-
-                        launchSelectedLauncher();
-
-                        finish();
-                    }
-
-                };
-
-        countdownTimer.start();
-    }
-
-
-    private void pulse(){
-
-        ScaleAnimation s=
-                new ScaleAnimation(
-                        1f,1.08f,
-                        1f,1.08f,
-                        Animation.RELATIVE_TO_SELF,.5f,
-                        Animation.RELATIVE_TO_SELF,.5f
-                );
-
-        s.setDuration(400);
-        s.setRepeatMode(Animation.REVERSE);
-        s.setRepeatCount(1);
-
-        countdownCircle.startAnimation(s);
-    }
-
-
-    private void launchSelectedLauncher(){
-
-        if(launchGuard)
-            return;
-
-        if(launcherPkgs.isEmpty())
-            return;
-
-        launchGuard=true;
-
-        Intent i=
-                getPackageManager()
-                        .getLaunchIntentForPackage(
-                                launcherPkgs.get(
-                                        launcherSpinner
-                                                .getSelectedItemPosition()
-                                )
+                        tone.startTone(
+                                ToneGenerator
+                                        .TONE_PROP_BEEP
                         );
 
-        if(i!=null)
-            startActivity(i);
+                        launchSelectedApps();
+                    }
+                }.start();
     }
 
+    private void launchSelectedApps() {
+
+        if (launchTriggered) {
+            return;
+        }
+
+        launchTriggered = true;
+
+        launchFromSpinner(
+                preApp1Spinner
+        );
+
+        if (
+           preApp2Spinner
+                   .getSelectedItemPosition() > 0
+           &&
+           preApp2Spinner
+                   .getSelectedItemPosition()
+           !=
+           preApp1Spinner
+                   .getSelectedItemPosition()
+        ) {
+            launchFromSpinner(
+                    preApp2Spinner
+            );
+        }
+
+        launchFromSpinner(
+                launcherSpinner
+        );
+    }
+
+    private void launchFromSpinner(
+            Spinner spinner
+    ) {
+
+        int pos =
+                spinner.getSelectedItemPosition();
+
+        if (pos <= 0) {
+            return;
+        }
+
+        Intent launchIntent =
+                getPackageManager()
+                .getLaunchIntentForPackage(
+                        apps.get(pos-1).pkg
+                );
+
+        if (launchIntent != null) {
+            startActivity(
+                    launchIntent
+            );
+        }
+    }
 
     @Override
-    protected void onDestroy(){
-
-        if(countdownTimer!=null){
-            countdownTimer.cancel();
-            countdownTimer=null;
-        }
-
-        if(tone!=null){
-            tone.release();
-            tone=null;
-        }
+    protected void onDestroy() {
 
         super.onDestroy();
-    }
 
+        if (countdownTimer != null) {
+            countdownTimer.cancel();
+        }
+
+        if (tone != null) {
+            tone.release();
+        }
+    }
 }
