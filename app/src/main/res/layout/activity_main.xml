@@ -23,13 +23,13 @@
             android:paddingTop="28dp"
             android:paddingBottom="36dp">
 
+            <!-- elevation intentionally removed -->
             <LinearLayout
                 android:layout_width="300dp"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
                 android:gravity="center_horizontal"
                 android:padding="24dp"
-                android:elevation="6dp"
                 android:background="@drawable/ui_card_bg">
 
                 <TextView
@@ -87,7 +87,7 @@
                     android:text="Ritardo secondi"
                     android:textSize="16sp"
                     android:textColor="#24323A"
-                    android:drawableStart="@drawable/ic_timer_small" 
+                    android:drawableStart="@drawable/ic_timer_small"
                     android:drawablePadding="8dp"/>
 
                 <Spinner
@@ -104,7 +104,7 @@
                     android:textSize="16sp"
                     android:textColor="#24323A"
                     android:layout_marginTop="20dp"
-                    android:drawableStart="@drawable/ic_rocket_small" 
+                    android:drawableStart="@drawable/ic_rocket_small"
                     android:drawablePadding="8dp"/>
 
                 <Spinner
@@ -137,14 +137,14 @@
         android:layout_height="match_parent"
         android:background="#DD000000">
 
+        <!-- progressDrawable intentionally removed -->
         <ProgressBar
             android:id="@+id/circularProgress"
             android:layout_gravity="center"
             android:layout_width="220dp"
             android:layout_height="220dp"
             android:max="100"
-            android:indeterminate="false"
-            android:progressDrawable="@drawable/circular_progress"/>
+            android:indeterminate="false"/>
 
         <TextView
             android:id="@+id/countdownNumber"
