@@ -76,11 +76,33 @@ public class MainActivity extends AppCompatActivity {
         countdownNumber=findViewById(R.id.countdownNumber);
         countdownLabel=findViewById(R.id.countdownLabel);
 
+        // ripristino tap-to-abort regressato
+        countdownOverlay.setOnClickListener(v -> {
+
+            if(countdownOverlay.getVisibility()!=View.VISIBLE)
+                return;
+
+            if(countdownTimer!=null){
+                countdownTimer.cancel();
+            }
+
+            circularProgress.setProgress(0);
+
+            countdownOverlay.setVisibility(
+                    View.GONE
+            );
+
+            launchTriggered=false;
+            lastTickAnnounced=-1;
+        });
+
         populateDelaySpinner();
         populateLaunchers();
         populatePreApps();
 
-        startButton.setOnClickListener(v->startFlow());
+        startButton.setOnClickListener(
+                v->startFlow()
+        );
     }
 
     private void populateDelaySpinner(){
@@ -123,7 +145,7 @@ public class MainActivity extends AppCompatActivity {
                 Intent.CATEGORY_HOME
         );
 
-        for(ResolveInfo ri:
+        for(ResolveInfo ri :
                 pm.queryIntentActivities(
                         homeIntent,
                         0
@@ -200,12 +222,10 @@ public class MainActivity extends AppCompatActivity {
         Set<String> blacklistPkgs=
                 new HashSet<>();
 
-        // blacklist launcher packages from launcher spinner
         for(AppEntry e:launcherApps){
             blacklistPkgs.add(e.pkg);
         }
 
-        // self exclusion
         blacklistPkgs.add(
                 getPackageName()
         );
@@ -234,7 +254,7 @@ public class MainActivity extends AppCompatActivity {
                 Intent.CATEGORY_LAUNCHER
         );
 
-        for(ResolveInfo ri:
+        for(ResolveInfo ri :
                 pm.queryIntentActivities(
                         intent,
                         0
@@ -244,8 +264,7 @@ public class MainActivity extends AppCompatActivity {
                     ri.activityInfo.packageName;
 
             String label=
-                    ri.loadLabel(pm)
-                            .toString();
+                    ri.loadLabel(pm).toString();
 
             if(blacklistPkgs.contains(pkg))
                 continue;
@@ -329,9 +348,7 @@ public class MainActivity extends AppCompatActivity {
                     ){
 
                         int sec=
-                                (int)(
-                                        (msRemaining+999)/1000
-                                );
+                                (int)((msRemaining+999)/1000);
 
                         countdownNumber.setText(
                                 String.valueOf(sec)
@@ -417,22 +434,13 @@ public class MainActivity extends AppCompatActivity {
 
         launchTriggered=true;
 
-        launchPre(
-                preApp1Spinner
-        );
+        launchPre(preApp1Spinner);
 
-        if(preApp2Spinner
-                .getSelectedItemPosition()>0
-                &&
-                preApp2Spinner
-                        .getSelectedItemPosition()
-                        !=
-                preApp1Spinner
-                        .getSelectedItemPosition()){
+        if(preApp2Spinner.getSelectedItemPosition()>0 &&
+                preApp2Spinner.getSelectedItemPosition()!=
+                preApp1Spinner.getSelectedItemPosition()){
 
-            launchPre(
-                    preApp2Spinner
-            );
+            launchPre(preApp2Spinner);
         }
 
         launchLauncher();
@@ -465,16 +473,13 @@ public class MainActivity extends AppCompatActivity {
                 launcherSpinner
                         .getSelectedItemPosition();
 
-        // "Nessuno"
         if(pos<=0)
             return;
 
         Intent i=
                 getPackageManager()
                         .getLaunchIntentForPackage(
-                                launcherApps.get(
-                                        pos-1
-                                ).pkg
+                                launcherApps.get(pos-1).pkg
                         );
 
         if(i!=null){
