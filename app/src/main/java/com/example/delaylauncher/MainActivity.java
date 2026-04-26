@@ -1,7 +1,6 @@
 package com.example.delaylauncher;
 
 import android.content.Intent;
-import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
 import android.media.MediaPlayer;
@@ -43,20 +42,21 @@ public class MainActivity extends AppCompatActivity {
     private boolean launchTriggered=false;
     private int lastTickAnnounced=-1;
 
-    static class AppEntry{
-        String label;
-        String pkg;
-        AppEntry(String l,String p){
-            label=l;
-            pkg=p;
-        }
-    }
-
     private final List<AppEntry> preApps=
             new ArrayList<>();
 
     private final List<AppEntry> launcherApps=
             new ArrayList<>();
+
+    static class AppEntry{
+        String label;
+        String pkg;
+
+        AppEntry(String label,String pkg){
+            this.label=label;
+            this.pkg=pkg;
+        }
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState){
@@ -76,16 +76,21 @@ public class MainActivity extends AppCompatActivity {
         countdownNumber=findViewById(R.id.countdownNumber);
         countdownLabel=findViewById(R.id.countdownLabel);
 
+        // ripristino tap-to-abort regressato
         countdownOverlay.setOnClickListener(v -> {
 
             if(countdownOverlay.getVisibility()!=View.VISIBLE)
                 return;
 
-            if(countdownTimer!=null)
+            if(countdownTimer!=null){
                 countdownTimer.cancel();
+            }
 
             circularProgress.setProgress(0);
-            countdownOverlay.setVisibility(View.GONE);
+
+            countdownOverlay.setVisibility(
+                    View.GONE
+            );
 
             launchTriggered=false;
             lastTickAnnounced=-1;
@@ -96,7 +101,7 @@ public class MainActivity extends AppCompatActivity {
         populatePreApps();
 
         startButton.setOnClickListener(
-                v -> startFlow()
+                v->startFlow()
         );
     }
 
@@ -122,6 +127,7 @@ public class MainActivity extends AppCompatActivity {
 
         delaySpinner.setAdapter(adapter);
 
+        // default 20 sec
         delaySpinner.setSelection(4);
     }
 
@@ -139,13 +145,11 @@ public class MainActivity extends AppCompatActivity {
                 Intent.CATEGORY_HOME
         );
 
-        List<ResolveInfo> homes=
+        for(ResolveInfo ri :
                 pm.queryIntentActivities(
                         homeIntent,
                         0
-                );
-
-        for(ResolveInfo ri:homes){
+                )){
 
             String pkg=
                     ri.activityInfo.packageName;
@@ -153,15 +157,9 @@ public class MainActivity extends AppCompatActivity {
             if(pkg.equals(getPackageName()))
                 continue;
 
-            String label=
-                    ri.loadLabel(pm).toString();
-
-            if(label.trim().isEmpty())
-                continue;
-
             launcherApps.add(
                     new AppEntry(
-                            label,
+                            ri.loadLabel(pm).toString(),
                             pkg
                     )
             );
@@ -207,9 +205,11 @@ public class MainActivity extends AppCompatActivity {
 
         launcherSpinner.setAdapter(adapter);
 
-        launcherSpinner.setSelection(
-                quickIndex+1
-        );
+        if(labels.size()>1){
+            launcherSpinner.setSelection(
+                    quickIndex+1
+            );
+        }
     }
 
     private void populatePreApps(){
@@ -244,24 +244,29 @@ public class MainActivity extends AppCompatActivity {
                         )
                 );
 
-        List<ApplicationInfo> installed=
-                pm.getInstalledApplications(0);
+        Intent intent=
+                new Intent(
+                        Intent.ACTION_MAIN,
+                        null
+                );
 
-        for(ApplicationInfo app:installed){
+        intent.addCategory(
+                Intent.CATEGORY_LAUNCHER
+        );
 
-            if(blacklistPkgs.contains(
-                    app.packageName))
-                continue;
+        for(ResolveInfo ri :
+                pm.queryIntentActivities(
+                        intent,
+                        0
+                )){
 
-            if(pm.getLaunchIntentForPackage(
-                    app.packageName)==null)
-                continue;
+            String pkg=
+                    ri.activityInfo.packageName;
 
             String label=
-                    pm.getApplicationLabel(app)
-                            .toString();
+                    ri.loadLabel(pm).toString();
 
-            if(label.trim().isEmpty())
+            if(blacklistPkgs.contains(pkg))
                 continue;
 
             if(blacklistLabels.contains(label))
@@ -270,7 +275,7 @@ public class MainActivity extends AppCompatActivity {
             preApps.add(
                     new AppEntry(
                             label,
-                            app.packageName
+                            pkg
                     )
             );
         }
@@ -313,7 +318,8 @@ public class MainActivity extends AppCompatActivity {
 
         int delay=
                 Integer.parseInt(
-                        delaySpinner.getSelectedItem()
+                        delaySpinner
+                                .getSelectedItem()
                                 .toString()
                 );
 
@@ -322,9 +328,13 @@ public class MainActivity extends AppCompatActivity {
             return;
         }
 
+        lastTickAnnounced=-1;
+
         countdownOverlay.setVisibility(
                 View.VISIBLE
         );
+
+        circularProgress.setProgress(0);
 
         countdownTimer=
                 new CountDownTimer(
@@ -332,44 +342,57 @@ public class MainActivity extends AppCompatActivity {
                         100
                 ){
 
-            public void onTick(long ms){
+                    @Override
+                    public void onTick(
+                            long msRemaining
+                    ){
 
-                int sec=
-                        (int)((ms+999)/1000);
+                        int sec=
+                                (int)((msRemaining+999)/1000);
 
-                countdownNumber.setText(
-                        String.valueOf(sec)
-                );
+                        countdownNumber.setText(
+                                String.valueOf(sec)
+                        );
 
-                int total=
-                        delay*1000;
+                        int total=
+                                delay*1000;
 
-                int p=
-                        (int)((total-ms)*100/total);
+                        int progress=
+                                (int)(
+                                        (total-msRemaining)
+                                                *100/total
+                                );
 
-                circularProgress.setProgress(p);
+                        circularProgress.setProgress(
+                                Math.min(
+                                        100,
+                                        progress
+                                )
+                        );
 
-                if(sec<=3 &&
-                        sec>=1 &&
-                        sec!=lastTickAnnounced){
+                        if(sec<=3 &&
+                                sec>=1 &&
+                                sec!=lastTickAnnounced){
 
-                    lastTickAnnounced=sec;
-                    playTick();
-                }
-            }
+                            lastTickAnnounced=sec;
 
-            public void onFinish(){
+                            playTick();
+                        }
+                    }
 
-                countdownOverlay.setVisibility(
-                        View.GONE
-                );
+                    @Override
+                    public void onFinish(){
 
-                playChime();
+                        countdownOverlay.setVisibility(
+                                View.GONE
+                        );
 
-                launchSelectedApps();
-            }
+                        playChime();
 
-        }.start();
+                        launchSelectedApps();
+                    }
+
+                }.start();
     }
 
     private void playTick(){
@@ -411,7 +434,37 @@ public class MainActivity extends AppCompatActivity {
 
         launchTriggered=true;
 
+        launchPre(preApp1Spinner);
+
+        if(preApp2Spinner.getSelectedItemPosition()>0 &&
+                preApp2Spinner.getSelectedItemPosition()!=
+                preApp1Spinner.getSelectedItemPosition()){
+
+            launchPre(preApp2Spinner);
+        }
+
         launchLauncher();
+    }
+
+    private void launchPre(
+            Spinner spinner
+    ){
+
+        int pos=
+                spinner.getSelectedItemPosition();
+
+        if(pos<=0)
+            return;
+
+        Intent i=
+                getPackageManager()
+                        .getLaunchIntentForPackage(
+                                preApps.get(pos-1).pkg
+                        );
+
+        if(i!=null){
+            startActivity(i);
+        }
     }
 
     private void launchLauncher(){
