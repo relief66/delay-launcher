@@ -1,6 +1,7 @@
 package com.example.delaylauncher;
 
 import android.content.Intent;
+import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
 import android.media.MediaPlayer;
@@ -16,9 +17,12 @@ import android.widget.TextView;
 import androidx.appcompat.app.AppCompatActivity;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -42,7 +46,6 @@ public class MainActivity extends AppCompatActivity {
     static class AppEntry{
         String label;
         String pkg;
-
         AppEntry(String l,String p){
             label=l;
             pkg=p;
@@ -89,8 +92,8 @@ public class MainActivity extends AppCompatActivity {
         });
 
         populateDelaySpinner();
-        populatePreApps();
         populateLaunchers();
+        populatePreApps();
 
         startButton.setOnClickListener(
                 v -> startFlow()
@@ -120,79 +123,6 @@ public class MainActivity extends AppCompatActivity {
         delaySpinner.setAdapter(adapter);
 
         delaySpinner.setSelection(4);
-    }
-
-    private void populatePreApps(){
-
-        preApps.clear();
-
-        PackageManager pm=
-                getPackageManager();
-
-        Intent launchIntent=
-                new Intent(
-                        Intent.ACTION_MAIN,
-                        null
-                );
-
-        launchIntent.addCategory(
-                Intent.CATEGORY_LAUNCHER
-        );
-
-        List<ResolveInfo> resolved=
-                pm.queryIntentActivities(
-                        launchIntent,
-                        0
-                );
-
-        for(ResolveInfo ri:resolved){
-
-            String pkg=
-                    ri.activityInfo.packageName;
-
-            String label=
-                    ri.loadLabel(pm).toString();
-
-            if(label.trim().isEmpty())
-                continue;
-
-            preApps.add(
-                    new AppEntry(
-                            label,
-                            pkg
-                    )
-            );
-        }
-
-        Collections.sort(
-                preApps,
-                Comparator.comparing(
-                        a->a.label.toLowerCase()
-                )
-        );
-
-        List<String> labels=
-                new ArrayList<>();
-
-        labels.add("Nessuno");
-
-        for(AppEntry e:preApps){
-            labels.add(e.label);
-        }
-
-        ArrayAdapter<String> adapter=
-                new ArrayAdapter<>(
-                        this,
-                        android.R.layout.simple_spinner_item,
-                        labels
-                );
-
-        adapter.setDropDownViewResource(
-                android.R.layout.simple_spinner_dropdown_item
-        );
-
-        preApp1Spinner.setAdapter(adapter);
-        preApp2Spinner.setAdapter(adapter);
     }
 
     private void populateLaunchers(){
@@ -226,8 +156,14 @@ public class MainActivity extends AppCompatActivity {
             String label=
                     ri.loadLabel(pm).toString();
 
+            if(label.trim().isEmpty())
+                continue;
+
             launcherApps.add(
-                    new AppEntry(label,pkg)
+                    new AppEntry(
+                            label,
+                            pkg
+                    )
             );
         }
 
@@ -274,6 +210,100 @@ public class MainActivity extends AppCompatActivity {
         launcherSpinner.setSelection(
                 quickIndex+1
         );
+    }
+
+    private void populatePreApps(){
+
+        preApps.clear();
+
+        PackageManager pm=
+                getPackageManager();
+
+        Set<String> blacklistPkgs=
+                new HashSet<>();
+
+        for(AppEntry e:launcherApps){
+            blacklistPkgs.add(e.pkg);
+        }
+
+        blacklistPkgs.add(
+                getPackageName()
+        );
+
+        Set<String> blacklistLabels=
+                new HashSet<>(
+                        Arrays.asList(
+                                "File",
+                                "Fota Update",
+                                "Google",
+                                "Impostazioni",
+                                "LED",
+                                "Play Store",
+                                "Telefono BT",
+                                "Tutte le App"
+                        )
+                );
+
+        List<ApplicationInfo> installed=
+                pm.getInstalledApplications(0);
+
+        for(ApplicationInfo app:installed){
+
+            if(blacklistPkgs.contains(
+                    app.packageName))
+                continue;
+
+            if(pm.getLaunchIntentForPackage(
+                    app.packageName)==null)
+                continue;
+
+            String label=
+                    pm.getApplicationLabel(app)
+                            .toString();
+
+            if(label.trim().isEmpty())
+                continue;
+
+            if(blacklistLabels.contains(label))
+                continue;
+
+            preApps.add(
+                    new AppEntry(
+                            label,
+                            app.packageName
+                    )
+            );
+        }
+
+        Collections.sort(
+                preApps,
+                Comparator.comparing(
+                        a->a.label.toLowerCase()
+                )
+        );
+
+        List<String> labels=
+                new ArrayList<>();
+
+        labels.add("Nessuno");
+
+        for(AppEntry e:preApps){
+            labels.add(e.label);
+        }
+
+        ArrayAdapter<String> adapter=
+                new ArrayAdapter<>(
+                        this,
+                        android.R.layout.simple_spinner_item,
+                        labels
+                );
+
+        adapter.setDropDownViewResource(
+                android.R.layout.simple_spinner_dropdown_item
+        );
+
+        preApp1Spinner.setAdapter(adapter);
+        preApp2Spinner.setAdapter(adapter);
     }
 
     private void startFlow(){
@@ -324,7 +354,6 @@ public class MainActivity extends AppCompatActivity {
                         sec!=lastTickAnnounced){
 
                     lastTickAnnounced=sec;
-
                     playTick();
                 }
             }
