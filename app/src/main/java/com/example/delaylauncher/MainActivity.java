@@ -6,10 +6,7 @@ import android.content.pm.ResolveInfo;
 import android.media.MediaPlayer;
 import android.os.Bundle;
 import android.os.CountDownTimer;
-import android.os.Handler;
-import android.os.Looper;
 import android.view.View;
-import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.ProgressBar;
@@ -19,12 +16,9 @@ import android.widget.TextView;
 import androidx.appcompat.app.AppCompatActivity;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -46,42 +40,68 @@ public class MainActivity extends AppCompatActivity {
     static class AppEntry{
         String label;
         String pkg;
+
         AppEntry(String l,String p){
             label=l;
             pkg=p;
         }
     }
 
-    private final List<AppEntry> launcherApps=new ArrayList<>();
-    private final List<AppEntry> allPreApps=new ArrayList<>();
-    private final List<AppEntry> filteredPreApps2=new ArrayList<>();
-
+    private final List<AppEntry> launcherApps=
+            new ArrayList<>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState){
         super.onCreate(savedInstanceState);
 
-        setContentView(R.layout.activity_main);
+        setContentView(
+                R.layout.activity_main
+        );
 
-        preApp1Spinner=findViewById(R.id.preApp1Spinner);
-        preApp2Spinner=findViewById(R.id.preApp2Spinner);
-        delaySpinner=findViewById(R.id.delaySpinner);
-        launcherSpinner=findViewById(R.id.launcherSpinner);
+        preApp1Spinner=
+                findViewById(
+                        R.id.preApp1Spinner);
 
-        startButton=findViewById(R.id.startButton);
+        preApp2Spinner=
+                findViewById(
+                        R.id.preApp2Spinner);
 
-        countdownOverlay=findViewById(R.id.countdownOverlay);
-        circularProgress=findViewById(R.id.circularProgress);
-        countdownNumber=findViewById(R.id.countdownNumber);
+        delaySpinner=
+                findViewById(
+                        R.id.delaySpinner);
 
-        countdownOverlay.setOnClickListener(v -> {
-            if(countdownOverlay.getVisibility()!=View.VISIBLE)
+        launcherSpinner=
+                findViewById(
+                        R.id.launcherSpinner);
+
+        startButton=
+                findViewById(
+                        R.id.startButton);
+
+        countdownOverlay=
+                findViewById(
+                        R.id.countdownOverlay);
+
+        circularProgress=
+                findViewById(
+                        R.id.circularProgress);
+
+        countdownNumber=
+                findViewById(
+                        R.id.countdownNumber);
+
+        countdownOverlay.setOnClickListener(v->{
+
+            if(countdownOverlay.getVisibility()
+                    !=View.VISIBLE)
                 return;
 
             if(countdownTimer!=null)
                 countdownTimer.cancel();
 
-            countdownOverlay.setVisibility(View.GONE);
+            countdownOverlay.setVisibility(
+                    View.GONE);
+
             circularProgress.setProgress(0);
 
             launchTriggered=false;
@@ -89,31 +109,13 @@ public class MainActivity extends AppCompatActivity {
         });
 
         populateDelaySpinner();
+        populatePreAppsStatic();
         populateLaunchers();
-        populatePreApps();
-
-        preApp1Spinner.setOnItemSelectedListener(
-                new AdapterView.OnItemSelectedListener() {
-                    @Override
-                    public void onItemSelected(
-                            AdapterView<?> parent,
-                            View view,
-                            int position,
-                            long id) {
-
-                        repopulatePreApp2(position);
-                    }
-
-                    @Override
-                    public void onNothingSelected(
-                            AdapterView<?> parent){}
-                });
 
         startButton.setOnClickListener(
-                v -> startFlow()
+                v->startFlow()
         );
     }
-
 
     private void populateDelaySpinner(){
 
@@ -121,14 +123,16 @@ public class MainActivity extends AppCompatActivity {
                 new ArrayList<>();
 
         for(int i=0;i<=60;i+=5){
-            delays.add(String.valueOf(i));
+            delays.add(
+                    String.valueOf(i));
         }
 
         ArrayAdapter<String> adapter=
                 new ArrayAdapter<>(
                         this,
                         android.R.layout.simple_spinner_item,
-                        delays);
+                        delays
+                );
 
         adapter.setDropDownViewResource(
                 android.R.layout.simple_spinner_dropdown_item);
@@ -136,6 +140,32 @@ public class MainActivity extends AppCompatActivity {
         delaySpinner.setAdapter(adapter);
 
         delaySpinner.setSelection(4);
+    }
+
+
+    private void populatePreAppsStatic(){
+
+        List<String> apps=
+                new ArrayList<>();
+
+        apps.add("Nessuno");
+        apps.add("Chrome");
+        apps.add("YouTube");
+        apps.add("Maps");
+        apps.add("Gmail");
+
+        ArrayAdapter<String> adapter=
+                new ArrayAdapter<>(
+                        this,
+                        android.R.layout.simple_spinner_item,
+                        apps
+                );
+
+        adapter.setDropDownViewResource(
+                android.R.layout.simple_spinner_dropdown_item);
+
+        preApp1Spinner.setAdapter(adapter);
+        preApp2Spinner.setAdapter(adapter);
     }
 
 
@@ -147,39 +177,44 @@ public class MainActivity extends AppCompatActivity {
                 getPackageManager();
 
         Intent homeIntent=
-                new Intent(Intent.ACTION_MAIN);
+                new Intent(
+                        Intent.ACTION_MAIN);
 
         homeIntent.addCategory(
                 Intent.CATEGORY_HOME);
 
         List<ResolveInfo> homes=
                 pm.queryIntentActivities(
-                        homeIntent,0);
+                        homeIntent,
+                        0
+                );
 
         for(ResolveInfo ri:homes){
 
             String pkg=
                     ri.activityInfo.packageName;
 
-            if(pkg.equals(getPackageName()))
+            if(pkg.equals(
+                    getPackageName()))
                 continue;
 
             String label=
-                    ri.loadLabel(pm).toString();
-
-            if(label.trim().isEmpty())
-                continue;
+                    ri.loadLabel(pm)
+                            .toString();
 
             launcherApps.add(
                     new AppEntry(
                             label,
-                            pkg));
+                            pkg
+                    ));
         }
 
         Collections.sort(
                 launcherApps,
                 Comparator.comparing(
-                        a->a.label.toLowerCase()));
+                        a->a.label.toLowerCase()
+                )
+        );
 
         List<String> labels=
                 new ArrayList<>();
@@ -205,153 +240,19 @@ public class MainActivity extends AppCompatActivity {
                 new ArrayAdapter<>(
                         this,
                         android.R.layout.simple_spinner_item,
-                        labels);
+                        labels
+                );
 
         adapter.setDropDownViewResource(
                 android.R.layout.simple_spinner_dropdown_item);
 
-        launcherSpinner.setAdapter(adapter);
+        launcherSpinner.setAdapter(
+                adapter
+        );
 
         launcherSpinner.setSelection(
-                quickIndex+1);
-    }
-
-
-    private void populatePreApps(){
-
-        allPreApps.clear();
-
-        PackageManager pm=
-                getPackageManager();
-
-        Intent appsIntent=
-                new Intent(Intent.ACTION_MAIN);
-
-        appsIntent.addCategory(
-                Intent.CATEGORY_LAUNCHER);
-
-        Set<String> launcherPkgs=
-                new HashSet<>();
-
-        for(AppEntry e:launcherApps){
-            launcherPkgs.add(e.pkg);
-        }
-
-        Set<String> blacklistLabels=
-                new HashSet<>(
-                        Arrays.asList(
-                                "File",
-                                "Fota Update",
-                                "Google",
-                                "Impostazioni",
-                                "LED",
-                                "Play Store",
-                                "Telefono BT",
-                                "Tutte le App"
-                        ));
-
-        List<ResolveInfo> apps=
-                pm.queryIntentActivities(
-                        appsIntent,0);
-
-        for(ResolveInfo ri:apps){
-
-            String pkg=
-                    ri.activityInfo.packageName;
-
-            if(pkg.equals(getPackageName()))
-                continue;
-
-            if(launcherPkgs.contains(pkg))
-                continue;
-
-            String label=
-                    ri.loadLabel(pm).toString();
-
-            if(label.trim().isEmpty())
-                continue;
-
-            if(blacklistLabels.contains(label))
-                continue;
-
-            boolean exists=false;
-
-            for(AppEntry e:allPreApps){
-                if(e.pkg.equals(pkg)){
-                    exists=true;
-                    break;
-                }
-            }
-
-            if(!exists){
-                allPreApps.add(
-                        new AppEntry(
-                                label,pkg));
-            }
-        }
-
-        Collections.sort(
-                allPreApps,
-                Comparator.comparing(
-                        a->a.label.toLowerCase()));
-
-        List<String> labels=
-                new ArrayList<>();
-
-        labels.add("Nessuno");
-
-        for(AppEntry e:allPreApps){
-            labels.add(e.label);
-        }
-
-        ArrayAdapter<String> adapter=
-                new ArrayAdapter<>(
-                        this,
-                        android.R.layout.simple_spinner_item,
-                        labels);
-
-        adapter.setDropDownViewResource(
-                android.R.layout.simple_spinner_dropdown_item);
-
-        preApp1Spinner.setAdapter(adapter);
-
-        repopulatePreApp2(0);
-    }
-
-
-    private void repopulatePreApp2(
-            int pre1Selection){
-
-        filteredPreApps2.clear();
-
-        for(int i=0;i<allPreApps.size();i++){
-
-            if((i+1)==pre1Selection)
-                continue;
-
-            filteredPreApps2.add(
-                    allPreApps.get(i));
-        }
-
-        List<String> labels=
-                new ArrayList<>();
-
-        labels.add("Nessuno");
-
-        for(AppEntry e:filteredPreApps2){
-            labels.add(e.label);
-        }
-
-        ArrayAdapter<String> adapter=
-                new ArrayAdapter<>(
-                        this,
-                        android.R.layout.simple_spinner_item,
-                        labels);
-
-        adapter.setDropDownViewResource(
-                android.R.layout.simple_spinner_dropdown_item);
-
-        preApp2Spinner.setAdapter(adapter);
+                quickIndex+1
+        );
     }
 
 
@@ -378,9 +279,11 @@ public class MainActivity extends AppCompatActivity {
         countdownTimer=
                 new CountDownTimer(
                         delay*1000L,
-                        100){
+                        100
+                ){
 
-                    public void onTick(long ms){
+                    public void onTick(
+                            long ms){
 
                         int sec=
                                 (int)((ms+999)/1000);
@@ -392,7 +295,8 @@ public class MainActivity extends AppCompatActivity {
                                 delay*1000;
 
                         circularProgress.setProgress(
-                                (int)((total-ms)*100/total));
+                                (int)((total-ms)
+                                        *100/total));
 
                         if(sec<=3 &&
                                 sec>=1 &&
@@ -405,17 +309,13 @@ public class MainActivity extends AppCompatActivity {
 
                     public void onFinish(){
 
-                        countdownOverlay.setVisibility(
-                                View.GONE);
+                        countdownOverlay
+                                .setVisibility(
+                                        View.GONE);
 
                         playChime();
 
-                        new Handler(
-                                Looper.getMainLooper()
-                        ).postDelayed(
-                                ()->launchSelectedApps(),
-                                600
-                        );
+                        launchSelectedApps();
                     }
 
                 }.start();
@@ -430,11 +330,14 @@ public class MainActivity extends AppCompatActivity {
                         R.raw.tick_soft);
 
         if(mp!=null){
+
             mp.setOnCompletionListener(
                     p->p.release());
+
             mp.start();
         }
     }
+
 
     private void playChime(){
 
@@ -444,11 +347,14 @@ public class MainActivity extends AppCompatActivity {
                         R.raw.chime_soft);
 
         if(mp!=null){
+
             mp.setOnCompletionListener(
                     p->p.release());
+
             mp.start();
         }
     }
+
 
 
     private void launchSelectedApps(){
@@ -458,36 +364,7 @@ public class MainActivity extends AppCompatActivity {
 
         launchTriggered=true;
 
-        launchFromSpinner(
-                preApp1Spinner,
-                allPreApps);
-
-        launchFromSpinner(
-                preApp2Spinner,
-                filteredPreApps2);
-
         launchLauncher();
-    }
-
-
-    private void launchFromSpinner(
-            Spinner spinner,
-            List<AppEntry> source){
-
-        int pos=
-                spinner.getSelectedItemPosition();
-
-        if(pos<=0)
-            return;
-
-        Intent i=
-                getPackageManager()
-                        .getLaunchIntentForPackage(
-                                source.get(pos-1).pkg);
-
-        if(i!=null){
-            startActivity(i);
-        }
     }
 
 
@@ -503,7 +380,9 @@ public class MainActivity extends AppCompatActivity {
         Intent i=
                 getPackageManager()
                         .getLaunchIntentForPackage(
-                                launcherApps.get(pos-1).pkg);
+                                launcherApps
+                                        .get(pos-1)
+                                        .pkg);
 
         if(i!=null){
             startActivity(i);
@@ -513,6 +392,7 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     protected void onDestroy(){
+
         super.onDestroy();
 
         if(countdownTimer!=null){
