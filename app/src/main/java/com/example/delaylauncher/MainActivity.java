@@ -3,7 +3,8 @@ package com.example.delaylauncher;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
-import android.media.MediaPlayer;
+import android.media.AudioAttributes;
+import android.media.SoundPool;
 import android.os.Bundle;
 import android.os.CountDownTimer;
 import android.view.View;
@@ -37,6 +38,10 @@ public class MainActivity extends AppCompatActivity {
     private boolean launchTriggered=false;
     private int lastTickAnnounced=-1;
 
+    private SoundPool soundPool;
+    private int tickId;
+    private int chimeId;
+
     static class AppEntry{
         String label;
         String pkg;
@@ -67,6 +72,32 @@ public class MainActivity extends AppCompatActivity {
         circularProgress=findViewById(R.id.circularProgress);
         countdownNumber=findViewById(R.id.countdownNumber);
 
+        AudioAttributes attrs=
+                new AudioAttributes.Builder()
+                        .setUsage(
+                                AudioAttributes.USAGE_ASSISTANCE_SONIFICATION)
+                        .setContentType(
+                                AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                        .build();
+
+        soundPool=
+                new SoundPool.Builder()
+                        .setMaxStreams(2)
+                        .setAudioAttributes(attrs)
+                        .build();
+
+        tickId=
+                soundPool.load(
+                        this,
+                        R.raw.tick_soft,
+                        1);
+
+        chimeId=
+                soundPool.load(
+                        this,
+                        R.raw.chime_soft,
+                        1);
+
         countdownOverlay.setOnClickListener(v->{
 
             if(countdownOverlay.getVisibility()!=View.VISIBLE)
@@ -91,20 +122,24 @@ public class MainActivity extends AppCompatActivity {
         );
     }
 
+
+
     private void populateDelaySpinner(){
 
         List<String> delays=
                 new ArrayList<>();
 
         for(int i=0;i<=60;i+=5){
-            delays.add(String.valueOf(i));
+            delays.add(
+                    String.valueOf(i));
         }
 
         ArrayAdapter<String> adapter=
                 new ArrayAdapter<>(
                         this,
                         android.R.layout.simple_spinner_item,
-                        delays);
+                        delays
+                );
 
         adapter.setDropDownViewResource(
                 android.R.layout.simple_spinner_dropdown_item);
@@ -113,6 +148,7 @@ public class MainActivity extends AppCompatActivity {
 
         delaySpinner.setSelection(4);
     }
+
 
 
     private void populatePreAppsStatic(){
@@ -158,15 +194,12 @@ public class MainActivity extends AppCompatActivity {
             )
                 continue;
 
-            if(!labels.contains(label)){
+            if(!labels.contains(label))
                 labels.add(label);
-            }
         }
 
         Collections.sort(
-                labels.subList(
-                        1,
-                        labels.size()),
+                labels.subList(1,labels.size()),
                 String.CASE_INSENSITIVE_ORDER
         );
 
@@ -252,7 +285,8 @@ public class MainActivity extends AppCompatActivity {
                 new ArrayAdapter<>(
                         this,
                         android.R.layout.simple_spinner_item,
-                        labels);
+                        labels
+                );
 
         adapter.setDropDownViewResource(
                 android.R.layout.simple_spinner_dropdown_item);
@@ -265,6 +299,7 @@ public class MainActivity extends AppCompatActivity {
                 quickIndex+1
         );
     }
+
 
 
     private void startFlow(){
@@ -291,7 +326,8 @@ public class MainActivity extends AppCompatActivity {
                         delay*1000L,
                         100){
 
-                    public void onTick(long ms){
+                    public void onTick(
+                            long ms){
 
                         int sec=
                                 (int)((ms+999)/1000);
@@ -317,8 +353,9 @@ public class MainActivity extends AppCompatActivity {
 
                     public void onFinish(){
 
-                        countdownOverlay.setVisibility(
-                                View.GONE);
+                        countdownOverlay
+                                .setVisibility(
+                                        View.GONE);
 
                         playChime();
 
@@ -331,30 +368,26 @@ public class MainActivity extends AppCompatActivity {
 
     private void playTick(){
 
-        MediaPlayer mp=
-                MediaPlayer.create(
-                        this,
-                        R.raw.tick_soft);
-
-        if(mp!=null){
-            mp.setOnCompletionListener(
-                    p->p.release());
-            mp.start();
+        if(soundPool!=null){
+            soundPool.play(
+                    tickId,
+                    1f,1f,
+                    1,
+                    0,
+                    1f);
         }
     }
 
 
     private void playChime(){
 
-        MediaPlayer mp=
-                MediaPlayer.create(
-                        this,
-                        R.raw.chime_soft);
-
-        if(mp!=null){
-            mp.setOnCompletionListener(
-                    p->p.release());
-            mp.start();
+        if(soundPool!=null){
+            soundPool.play(
+                    chimeId,
+                    1f,1f,
+                    1,
+                    0,
+                    1f);
         }
     }
 
@@ -399,6 +432,10 @@ public class MainActivity extends AppCompatActivity {
 
         if(countdownTimer!=null){
             countdownTimer.cancel();
+        }
+
+        if(soundPool!=null){
+            soundPool.release();
         }
     }
 }
