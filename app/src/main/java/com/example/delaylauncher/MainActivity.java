@@ -54,54 +54,28 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState){
         super.onCreate(savedInstanceState);
 
-        setContentView(
-                R.layout.activity_main
-        );
+        setContentView(R.layout.activity_main);
 
-        preApp1Spinner=
-                findViewById(
-                        R.id.preApp1Spinner);
+        preApp1Spinner=findViewById(R.id.preApp1Spinner);
+        preApp2Spinner=findViewById(R.id.preApp2Spinner);
+        delaySpinner=findViewById(R.id.delaySpinner);
+        launcherSpinner=findViewById(R.id.launcherSpinner);
 
-        preApp2Spinner=
-                findViewById(
-                        R.id.preApp2Spinner);
+        startButton=findViewById(R.id.startButton);
 
-        delaySpinner=
-                findViewById(
-                        R.id.delaySpinner);
-
-        launcherSpinner=
-                findViewById(
-                        R.id.launcherSpinner);
-
-        startButton=
-                findViewById(
-                        R.id.startButton);
-
-        countdownOverlay=
-                findViewById(
-                        R.id.countdownOverlay);
-
-        circularProgress=
-                findViewById(
-                        R.id.circularProgress);
-
-        countdownNumber=
-                findViewById(
-                        R.id.countdownNumber);
+        countdownOverlay=findViewById(R.id.countdownOverlay);
+        circularProgress=findViewById(R.id.circularProgress);
+        countdownNumber=findViewById(R.id.countdownNumber);
 
         countdownOverlay.setOnClickListener(v->{
 
-            if(countdownOverlay.getVisibility()
-                    !=View.VISIBLE)
+            if(countdownOverlay.getVisibility()!=View.VISIBLE)
                 return;
 
             if(countdownTimer!=null)
                 countdownTimer.cancel();
 
-            countdownOverlay.setVisibility(
-                    View.GONE);
-
+            countdownOverlay.setVisibility(View.GONE);
             circularProgress.setProgress(0);
 
             launchTriggered=false;
@@ -123,16 +97,14 @@ public class MainActivity extends AppCompatActivity {
                 new ArrayList<>();
 
         for(int i=0;i<=60;i+=5){
-            delays.add(
-                    String.valueOf(i));
+            delays.add(String.valueOf(i));
         }
 
         ArrayAdapter<String> adapter=
                 new ArrayAdapter<>(
                         this,
                         android.R.layout.simple_spinner_item,
-                        delays
-                );
+                        delays);
 
         adapter.setDropDownViewResource(
                 android.R.layout.simple_spinner_dropdown_item);
@@ -145,20 +117,64 @@ public class MainActivity extends AppCompatActivity {
 
     private void populatePreAppsStatic(){
 
-        List<String> apps=
+        PackageManager pm=getPackageManager();
+
+        Intent appsIntent=
+                new Intent(Intent.ACTION_MAIN);
+
+        appsIntent.addCategory(
+                Intent.CATEGORY_LAUNCHER);
+
+        List<ResolveInfo> apps=
+                pm.queryIntentActivities(
+                        appsIntent,0);
+
+        List<String> labels=
                 new ArrayList<>();
 
-        apps.add("Nessuno");
-        apps.add("Chrome");
-        apps.add("YouTube");
-        apps.add("Maps");
-        apps.add("Gmail");
+        labels.add("Nessuno");
+
+        for(ResolveInfo ri:apps){
+
+            String label=
+                    ri.loadLabel(pm)
+                            .toString()
+                            .trim();
+
+            if(label.isEmpty())
+                continue;
+
+            String norm=
+                    label.toLowerCase()
+                            .replace(" ","")
+                            .trim();
+
+            if(
+                    norm.equals("apkinstaller") ||
+                    norm.equals("fotaupdate") ||
+                    norm.equals("google") ||
+                    norm.equals("impostazioni") ||
+                    norm.equals("led")
+            )
+                continue;
+
+            if(!labels.contains(label)){
+                labels.add(label);
+            }
+        }
+
+        Collections.sort(
+                labels.subList(
+                        1,
+                        labels.size()),
+                String.CASE_INSENSITIVE_ORDER
+        );
 
         ArrayAdapter<String> adapter=
                 new ArrayAdapter<>(
                         this,
                         android.R.layout.simple_spinner_item,
-                        apps
+                        labels
                 );
 
         adapter.setDropDownViewResource(
@@ -169,6 +185,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
 
+
     private void populateLaunchers(){
 
         launcherApps.clear();
@@ -177,30 +194,25 @@ public class MainActivity extends AppCompatActivity {
                 getPackageManager();
 
         Intent homeIntent=
-                new Intent(
-                        Intent.ACTION_MAIN);
+                new Intent(Intent.ACTION_MAIN);
 
         homeIntent.addCategory(
                 Intent.CATEGORY_HOME);
 
         List<ResolveInfo> homes=
                 pm.queryIntentActivities(
-                        homeIntent,
-                        0
-                );
+                        homeIntent,0);
 
         for(ResolveInfo ri:homes){
 
             String pkg=
                     ri.activityInfo.packageName;
 
-            if(pkg.equals(
-                    getPackageName()))
+            if(pkg.equals(getPackageName()))
                 continue;
 
             String label=
-                    ri.loadLabel(pm)
-                            .toString();
+                    ri.loadLabel(pm).toString();
 
             launcherApps.add(
                     new AppEntry(
@@ -240,8 +252,7 @@ public class MainActivity extends AppCompatActivity {
                 new ArrayAdapter<>(
                         this,
                         android.R.layout.simple_spinner_item,
-                        labels
-                );
+                        labels);
 
         adapter.setDropDownViewResource(
                 android.R.layout.simple_spinner_dropdown_item);
@@ -254,7 +265,6 @@ public class MainActivity extends AppCompatActivity {
                 quickIndex+1
         );
     }
-
 
 
     private void startFlow(){
@@ -279,11 +289,9 @@ public class MainActivity extends AppCompatActivity {
         countdownTimer=
                 new CountDownTimer(
                         delay*1000L,
-                        100
-                ){
+                        100){
 
-                    public void onTick(
-                            long ms){
+                    public void onTick(long ms){
 
                         int sec=
                                 (int)((ms+999)/1000);
@@ -309,9 +317,8 @@ public class MainActivity extends AppCompatActivity {
 
                     public void onFinish(){
 
-                        countdownOverlay
-                                .setVisibility(
-                                        View.GONE);
+                        countdownOverlay.setVisibility(
+                                View.GONE);
 
                         playChime();
 
@@ -330,10 +337,8 @@ public class MainActivity extends AppCompatActivity {
                         R.raw.tick_soft);
 
         if(mp!=null){
-
             mp.setOnCompletionListener(
                     p->p.release());
-
             mp.start();
         }
     }
@@ -347,14 +352,11 @@ public class MainActivity extends AppCompatActivity {
                         R.raw.chime_soft);
 
         if(mp!=null){
-
             mp.setOnCompletionListener(
                     p->p.release());
-
             mp.start();
         }
     }
-
 
 
     private void launchSelectedApps(){
