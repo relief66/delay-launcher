@@ -1,6 +1,7 @@
 package com.example.delaylauncher;
 
 import android.content.Intent;
+import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
 import android.media.MediaPlayer;
@@ -91,6 +92,7 @@ public class MainActivity extends AppCompatActivity {
         );
     }
 
+
     private void populateDelaySpinner(){
 
         List<String> delays=
@@ -114,22 +116,52 @@ public class MainActivity extends AppCompatActivity {
         delaySpinner.setSelection(4);
     }
 
+
+
     private void populatePreAppsStatic(){
 
-        List<String> apps=
+        PackageManager pm=getPackageManager();
+
+        List<ApplicationInfo> installed =
+                pm.getInstalledApplications(0);
+
+        List<String> labels=
                 new ArrayList<>();
 
-        apps.add("Nessuno");
-        apps.add("Chrome");
-        apps.add("YouTube");
-        apps.add("Maps");
-        apps.add("Gmail");
+        labels.add("Nessuno");
+
+        for(ApplicationInfo app : installed){
+
+            String pkg=app.packageName;
+
+            if(pkg.equals(getPackageName()))
+                continue;
+
+            if(pm.getLaunchIntentForPackage(pkg)==null)
+                continue;
+
+            String label=
+                    pm.getApplicationLabel(app)
+                            .toString()
+                            .trim();
+
+            if(label.isEmpty())
+                continue;
+
+            if(!labels.contains(label))
+                labels.add(label);
+        }
+
+        Collections.sort(
+                labels.subList(1,labels.size()),
+                String.CASE_INSENSITIVE_ORDER
+        );
 
         ArrayAdapter<String> adapter=
                 new ArrayAdapter<>(
                         this,
                         android.R.layout.simple_spinner_item,
-                        apps
+                        labels
                 );
 
         adapter.setDropDownViewResource(
@@ -138,6 +170,8 @@ public class MainActivity extends AppCompatActivity {
         preApp1Spinner.setAdapter(adapter);
         preApp2Spinner.setAdapter(adapter);
     }
+
+
 
     private void populateLaunchers(){
 
@@ -154,9 +188,7 @@ public class MainActivity extends AppCompatActivity {
 
         List<ResolveInfo> homes=
                 pm.queryIntentActivities(
-                        homeIntent,
-                        0
-                );
+                        homeIntent,0);
 
         for(ResolveInfo ri:homes){
 
@@ -167,16 +199,14 @@ public class MainActivity extends AppCompatActivity {
                 continue;
 
             String label=
-                    ri.loadLabel(pm)
-                            .toString();
+                    ri.loadLabel(pm).toString();
 
             if(label.trim().isEmpty())
                 continue;
 
             launcherApps.add(
                     new AppEntry(
-                            label,
-                            pkg
+                            label,pkg
                     ));
         }
 
@@ -222,6 +252,7 @@ public class MainActivity extends AppCompatActivity {
                 quickIndex+1
         );
     }
+
 
     private void startFlow(){
 
