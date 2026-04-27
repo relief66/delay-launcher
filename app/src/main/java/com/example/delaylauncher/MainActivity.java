@@ -3,8 +3,7 @@ package com.example.delaylauncher;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
-import android.media.AudioAttributes;
-import android.media.SoundPool;
+import android.media.MediaPlayer;
 import android.os.Bundle;
 import android.os.CountDownTimer;
 import android.view.View;
@@ -38,10 +37,6 @@ public class MainActivity extends AppCompatActivity {
     private boolean launchTriggered=false;
     private int lastTickAnnounced=-1;
 
-    private SoundPool soundPool;
-    private int tickId;
-    private int chimeId;
-
     static class AppEntry{
         String label;
         String pkg;
@@ -72,32 +67,6 @@ public class MainActivity extends AppCompatActivity {
         circularProgress=findViewById(R.id.circularProgress);
         countdownNumber=findViewById(R.id.countdownNumber);
 
-        AudioAttributes attrs=
-                new AudioAttributes.Builder()
-                        .setUsage(
-                                AudioAttributes.USAGE_ASSISTANCE_SONIFICATION)
-                        .setContentType(
-                                AudioAttributes.CONTENT_TYPE_SONIFICATION)
-                        .build();
-
-        soundPool=
-                new SoundPool.Builder()
-                        .setMaxStreams(2)
-                        .setAudioAttributes(attrs)
-                        .build();
-
-        tickId=
-                soundPool.load(
-                        this,
-                        R.raw.tick_soft,
-                        1);
-
-        chimeId=
-                soundPool.load(
-                        this,
-                        R.raw.chime_soft,
-                        1);
-
         countdownOverlay.setOnClickListener(v->{
 
             if(countdownOverlay.getVisibility()!=View.VISIBLE)
@@ -121,7 +90,6 @@ public class MainActivity extends AppCompatActivity {
                 v->startFlow()
         );
     }
-
 
 
     private void populateDelaySpinner(){
@@ -150,64 +118,22 @@ public class MainActivity extends AppCompatActivity {
     }
 
 
-
     private void populatePreAppsStatic(){
 
-        PackageManager pm=getPackageManager();
-
-        Intent appsIntent=
-                new Intent(Intent.ACTION_MAIN);
-
-        appsIntent.addCategory(
-                Intent.CATEGORY_LAUNCHER);
-
-        List<ResolveInfo> apps=
-                pm.queryIntentActivities(
-                        appsIntent,0);
-
-        List<String> labels=
+        List<String> apps=
                 new ArrayList<>();
 
-        labels.add("Nessuno");
-
-        for(ResolveInfo ri:apps){
-
-            String label=
-                    ri.loadLabel(pm)
-                            .toString()
-                            .trim();
-
-            if(label.isEmpty())
-                continue;
-
-            String norm=
-                    label.toLowerCase()
-                            .replace(" ","")
-                            .trim();
-
-            if(
-                    norm.equals("apkinstaller") ||
-                    norm.equals("fotaupdate") ||
-                    norm.equals("google") ||
-                    norm.equals("impostazioni") ||
-                    norm.equals("led")
-            )
-                continue;
-
-            if(!labels.contains(label))
-                labels.add(label);
-        }
-
-        Collections.sort(
-                labels.subList(1,labels.size()),
-                String.CASE_INSENSITIVE_ORDER
-        );
+        apps.add("Nessuno");
+        apps.add("Chrome");
+        apps.add("YouTube");
+        apps.add("Maps");
+        apps.add("Gmail");
 
         ArrayAdapter<String> adapter=
                 new ArrayAdapter<>(
                         this,
                         android.R.layout.simple_spinner_item,
-                        labels
+                        apps
                 );
 
         adapter.setDropDownViewResource(
@@ -216,7 +142,6 @@ public class MainActivity extends AppCompatActivity {
         preApp1Spinner.setAdapter(adapter);
         preApp2Spinner.setAdapter(adapter);
     }
-
 
 
     private void populateLaunchers(){
@@ -234,18 +159,22 @@ public class MainActivity extends AppCompatActivity {
 
         List<ResolveInfo> homes=
                 pm.queryIntentActivities(
-                        homeIntent,0);
+                        homeIntent,
+                        0
+                );
 
         for(ResolveInfo ri:homes){
 
             String pkg=
                     ri.activityInfo.packageName;
 
-            if(pkg.equals(getPackageName()))
+            if(pkg.equals(
+                    getPackageName()))
                 continue;
 
             String label=
-                    ri.loadLabel(pm).toString();
+                    ri.loadLabel(pm)
+                            .toString();
 
             launcherApps.add(
                     new AppEntry(
@@ -301,7 +230,6 @@ public class MainActivity extends AppCompatActivity {
     }
 
 
-
     private void startFlow(){
 
         if(launchTriggered)
@@ -324,7 +252,8 @@ public class MainActivity extends AppCompatActivity {
         countdownTimer=
                 new CountDownTimer(
                         delay*1000L,
-                        100){
+                        100
+                ){
 
                     public void onTick(
                             long ms){
@@ -368,26 +297,30 @@ public class MainActivity extends AppCompatActivity {
 
     private void playTick(){
 
-        if(soundPool!=null){
-            soundPool.play(
-                    tickId,
-                    1f,1f,
-                    1,
-                    0,
-                    1f);
+        MediaPlayer mp=
+                MediaPlayer.create(
+                        this,
+                        R.raw.tick_soft);
+
+        if(mp!=null){
+            mp.setOnCompletionListener(
+                    p->p.release());
+            mp.start();
         }
     }
 
 
     private void playChime(){
 
-        if(soundPool!=null){
-            soundPool.play(
-                    chimeId,
-                    1f,1f,
-                    1,
-                    0,
-                    1f);
+        MediaPlayer mp=
+                MediaPlayer.create(
+                        this,
+                        R.raw.chime_soft);
+
+        if(mp!=null){
+            mp.setOnCompletionListener(
+                    p->p.release());
+            mp.start();
         }
     }
 
@@ -432,10 +365,6 @@ public class MainActivity extends AppCompatActivity {
 
         if(countdownTimer!=null){
             countdownTimer.cancel();
-        }
-
-        if(soundPool!=null){
-            soundPool.release();
         }
     }
 }
