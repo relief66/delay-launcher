@@ -91,15 +91,13 @@ public class MainActivity extends AppCompatActivity {
         );
     }
 
-
     private void populateDelaySpinner(){
 
         List<String> delays=
                 new ArrayList<>();
 
         for(int i=0;i<=60;i+=5){
-            delays.add(
-                    String.valueOf(i));
+            delays.add(String.valueOf(i));
         }
 
         ArrayAdapter<String> adapter=
@@ -113,10 +111,8 @@ public class MainActivity extends AppCompatActivity {
                 android.R.layout.simple_spinner_dropdown_item);
 
         delaySpinner.setAdapter(adapter);
-
         delaySpinner.setSelection(4);
     }
-
 
     private void populatePreAppsStatic(){
 
@@ -143,7 +139,6 @@ public class MainActivity extends AppCompatActivity {
         preApp2Spinner.setAdapter(adapter);
     }
 
-
     private void populateLaunchers(){
 
         launcherApps.clear();
@@ -168,13 +163,15 @@ public class MainActivity extends AppCompatActivity {
             String pkg=
                     ri.activityInfo.packageName;
 
-            if(pkg.equals(
-                    getPackageName()))
+            if(pkg.equals(getPackageName()))
                 continue;
 
             String label=
                     ri.loadLabel(pm)
                             .toString();
+
+            if(label.trim().isEmpty())
+                continue;
 
             launcherApps.add(
                     new AppEntry(
@@ -220,15 +217,11 @@ public class MainActivity extends AppCompatActivity {
         adapter.setDropDownViewResource(
                 android.R.layout.simple_spinner_dropdown_item);
 
-        launcherSpinner.setAdapter(
-                adapter
-        );
-
+        launcherSpinner.setAdapter(adapter);
         launcherSpinner.setSelection(
                 quickIndex+1
         );
     }
-
 
     private void startFlow(){
 
@@ -246,17 +239,14 @@ public class MainActivity extends AppCompatActivity {
             return;
         }
 
-        countdownOverlay.setVisibility(
-                View.VISIBLE);
+        countdownOverlay.setVisibility(View.VISIBLE);
 
         countdownTimer=
                 new CountDownTimer(
                         delay*1000L,
-                        100
-                ){
+                        100){
 
-                    public void onTick(
-                            long ms){
+                    public void onTick(long ms){
 
                         int sec=
                                 (int)((ms+999)/1000);
@@ -264,16 +254,14 @@ public class MainActivity extends AppCompatActivity {
                         countdownNumber.setText(
                                 String.valueOf(sec));
 
-                        int total=
-                                delay*1000;
+                        int total=delay*1000;
 
                         circularProgress.setProgress(
-                                (int)((total-ms)
-                                        *100/total));
+                                (int)((total-ms)*100/total));
 
                         if(sec<=3 &&
-                                sec>=1 &&
-                                sec!=lastTickAnnounced){
+                           sec>=1 &&
+                           sec!=lastTickAnnounced){
 
                             lastTickAnnounced=sec;
                             playTick();
@@ -282,9 +270,8 @@ public class MainActivity extends AppCompatActivity {
 
                     public void onFinish(){
 
-                        countdownOverlay
-                                .setVisibility(
-                                        View.GONE);
+                        countdownOverlay.setVisibility(
+                                View.GONE);
 
                         playChime();
 
@@ -293,7 +280,6 @@ public class MainActivity extends AppCompatActivity {
 
                 }.start();
     }
-
 
     private void playTick(){
 
@@ -309,7 +295,6 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-
     private void playChime(){
 
         MediaPlayer mp=
@@ -324,7 +309,6 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-
     private void launchSelectedApps(){
 
         if(launchTriggered)
@@ -334,7 +318,6 @@ public class MainActivity extends AppCompatActivity {
 
         launchLauncher();
     }
-
 
     private void launchLauncher(){
 
@@ -356,7 +339,6 @@ public class MainActivity extends AppCompatActivity {
             startActivity(i);
         }
     }
-
 
     @Override
     protected void onDestroy(){
