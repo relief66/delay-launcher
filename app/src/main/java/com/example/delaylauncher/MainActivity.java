@@ -38,6 +38,9 @@ public class MainActivity extends AppCompatActivity {
     private boolean launchTriggered=false;
     private int lastTickAnnounced=-1;
 
+    private MediaPlayer tickPlayer;
+    private MediaPlayer chimePlayer;
+
     static class AppEntry{
         String label;
         String pkg;
@@ -68,6 +71,16 @@ public class MainActivity extends AppCompatActivity {
         circularProgress=findViewById(R.id.circularProgress);
         countdownNumber=findViewById(R.id.countdownNumber);
 
+        tickPlayer=
+                MediaPlayer.create(
+                        this,
+                        R.raw.tick_soft);
+
+        chimePlayer=
+                MediaPlayer.create(
+                        this,
+                        R.raw.chime_soft);
+
         countdownOverlay.setOnClickListener(v->{
 
             if(countdownOverlay.getVisibility()!=View.VISIBLE)
@@ -91,6 +104,7 @@ public class MainActivity extends AppCompatActivity {
                 v->startFlow()
         );
     }
+
 
 
     private void populateDelaySpinner(){
@@ -122,7 +136,7 @@ public class MainActivity extends AppCompatActivity {
 
         PackageManager pm=getPackageManager();
 
-        List<ApplicationInfo> installed =
+        List<ApplicationInfo> installed=
                 pm.getInstalledApplications(0);
 
         List<String> labels=
@@ -130,7 +144,7 @@ public class MainActivity extends AppCompatActivity {
 
         labels.add("Nessuno");
 
-        for(ApplicationInfo app : installed){
+        for(ApplicationInfo app:installed){
 
             String pkg=app.packageName;
 
@@ -254,6 +268,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
 
+
     private void startFlow(){
 
         if(launchTriggered)
@@ -285,10 +300,12 @@ public class MainActivity extends AppCompatActivity {
                         countdownNumber.setText(
                                 String.valueOf(sec));
 
-                        int total=delay*1000;
+                        int total=
+                                delay*1000;
 
                         circularProgress.setProgress(
-                                (int)((total-ms)*100/total));
+                                (int)((total-ms)
+                                        *100/total));
 
                         if(sec<=3 &&
                            sec>=1 &&
@@ -301,8 +318,9 @@ public class MainActivity extends AppCompatActivity {
 
                     public void onFinish(){
 
-                        countdownOverlay.setVisibility(
-                                View.GONE);
+                        countdownOverlay
+                                .setVisibility(
+                                        View.GONE);
 
                         playChime();
 
@@ -312,33 +330,28 @@ public class MainActivity extends AppCompatActivity {
                 }.start();
     }
 
+
+
     private void playTick(){
 
-        MediaPlayer mp=
-                MediaPlayer.create(
-                        this,
-                        R.raw.tick_soft);
+        if(tickPlayer!=null){
 
-        if(mp!=null){
-            mp.setOnCompletionListener(
-                    p->p.release());
-            mp.start();
+            tickPlayer.seekTo(0);
+            tickPlayer.start();
         }
     }
+
 
     private void playChime(){
 
-        MediaPlayer mp=
-                MediaPlayer.create(
-                        this,
-                        R.raw.chime_soft);
+        if(chimePlayer!=null){
 
-        if(mp!=null){
-            mp.setOnCompletionListener(
-                    p->p.release());
-            mp.start();
+            chimePlayer.seekTo(0);
+            chimePlayer.start();
         }
     }
+
+
 
     private void launchSelectedApps(){
 
@@ -349,6 +362,7 @@ public class MainActivity extends AppCompatActivity {
 
         launchLauncher();
     }
+
 
     private void launchLauncher(){
 
@@ -371,6 +385,7 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+
     @Override
     protected void onDestroy(){
 
@@ -378,6 +393,14 @@ public class MainActivity extends AppCompatActivity {
 
         if(countdownTimer!=null){
             countdownTimer.cancel();
+        }
+
+        if(tickPlayer!=null){
+            tickPlayer.release();
+        }
+
+        if(chimePlayer!=null){
+            chimePlayer.release();
         }
     }
 }
